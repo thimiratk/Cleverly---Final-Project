@@ -1,31 +1,35 @@
-import React from 'react';
-import { Outlet } from 'react-router-dom';
-import Header from '../../components/Layout/Header';
-import Sidebar from '../../components/Layout/Sidebar';
-import RightSidebar from '../../components/Layout/RightSidebar';
+// src/pages/HomePage/AppLayout.jsx
+import React from "react";
+import { Outlet } from "react-router-dom";
+import Header from "../../components/Layout/Header";
+import Sidebar from "../../components/Layout/Sidebar";
+import RightSidebar from "../../components/Layout/RightSidebar";
 
 const AppLayout = () => {
   return (
-    <div className="grid grid-cols-5 grid-rows-5 gap-4 min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="col-span-5">
-        <Header />
-      </div>
-
-      {/* Sidebar */}
-      <div className="row-span-4 row-start-2">
-        <Sidebar />
-      </div>
-
-      {/* Main Content: Use Outlet to load Home/Login/SignUp pages here */}
-      <div className="col-span-3 row-span-4 row-start-2">
-        <Outlet />
-      </div>
-
-      {/* Right Sidebar */}
-      <div className="row-span-4 col-start-5 row-start-2">
-        <RightSidebar />
-      </div>
+      <Header />
+      
+      {/* Main Content Area */}
+      <main className="container mx-auto px-4 py-6">
+        <div className="flex gap-6">
+          {/* Left Sidebar */}
+          <aside className="hidden lg:block w-72 sticky top-6 self-start">
+            <Sidebar />
+          </aside>
+          
+          {/* Main Content */}
+          <section className="flex-1 min-w-0">
+            <Outlet />
+          </section>
+          
+          {/* Right Sidebar */}
+          <aside className="hidden lg:block w-72 sticky top-6 self-start">
+            <RightSidebar />
+          </aside>
+        </div>
+      </main>
     </div>
   );
 };

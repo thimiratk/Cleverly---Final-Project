@@ -1,38 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, MessageCircle, Star, Check } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Heart, MessageCircle, Star, Check } from "lucide-react";
+import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 const CleverlySignUp = () => {
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: ''
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
 
   const [activeReaction, setActiveReaction] = useState(0);
   const [pulseEffect, setPulseEffect] = useState(false);
 
-  const reactions = ['🔥', '💜', '⭐', '💖', '✨'];
+  const reactions = ["🔥", "💜", "⭐", "💖", "✨"];
 
+  // Emoji reaction animation
   useEffect(() => {
     const interval = setInterval(() => {
-      setActiveReaction(prev => (prev + 1) % reactions.length);
+      setActiveReaction((prev) => (prev + 1) % reactions.length);
       setPulseEffect(true);
       setTimeout(() => setPulseEffect(false), 300);
     }, 2000);
-
     return () => clearInterval(interval);
-  }, []);
+  }, [reactions.length]);
 
+  // Handle input change
   const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
   };
 
+  // Validation helper
+  const validateForm = () => {
+    if (!formData.email.trim()) {
+      toast.error("Email is required");
+      return false;
+    }
+    // Simple email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      toast.error("Please enter a valid email");
+      return false;
+    }
+    if (!formData.password) {
+      toast.error("Password is required");
+      return false;
+    }
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return false;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return false;
+    }
+    return true;
+  };
+
+  // Submit handler
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
+    if (!validateForm()) return;
+
+    // TODO: API call here
+    console.log("Form submitted:", formData);
+    toast.success("Sign up successful!");
+
+    // Optionally reset form
+    setFormData({ email: "", password: "", confirmPassword: "" });
   };
 
   return (
@@ -48,56 +86,52 @@ const CleverlySignUp = () => {
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
               CLEVERLY
             </h1>
-            
           </div>
 
           {/* Form */}
-          <div className="space-y-4">
-            <div>
-              <input
-                type="email"
-                name="email"
-                placeholder="User name or E-mail"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              />
-            </div>
-            
-            <div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleInputChange}
-                className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              />
-            </div>
-            
-            <div>
-              <input
-                type="password"
-                name="confirmPassword"
-                placeholder="Confirm Password"
-                value={formData.confirmPassword}
-                onChange={handleInputChange}
-                className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              />
-            </div>
+          <form className="space-y-4" onSubmit={handleSubmit}>
+            <input
+              type="email"
+              name="email"
+              placeholder="User name or E-mail"
+              value={formData.email}
+              onChange={handleInputChange}
+              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              autoComplete="email"
+            />
+
+            <input
+              type="password"
+              name="password"
+              placeholder="Password"
+              value={formData.password}
+              onChange={handleInputChange}
+              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              autoComplete="new-password"
+            />
+
+            <input
+              type="password"
+              name="confirmPassword"
+              placeholder="Confirm Password"
+              value={formData.confirmPassword}
+              onChange={handleInputChange}
+              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              autoComplete="new-password"
+            />
 
             <button
-              onClick={handleSubmit}
+              type="submit"
               className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
             >
               Sign Up
             </button>
-          </div>
+          </form>
 
           {/* Divider */}
           <div className="flex items-center my-6">
             <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-gray-500 text-sm">Or</span>
+            <span className="px-4 text-gray-500 text-sm">OR</span>
             <div className="flex-1 border-t border-gray-200"></div>
           </div>
 
@@ -113,14 +147,20 @@ const CleverlySignUp = () => {
 
           {/* Footer Links */}
           <div className="text-center space-y-2">
-            <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+            <Link
+              to="/forgot-password"
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+            >
               Forgot password?
-            </button>
+            </Link>
             <div className="text-sm text-gray-600">
-              Have an account?{' '}
-              <button className="text-blue-600 hover:text-blue-700 font-medium">
+              Have an account?{" "}
+              <Link
+                to="/login"
+                className="text-blue-600 hover:text-blue-700 font-medium"
+              >
                 Login
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -139,10 +179,14 @@ const CleverlySignUp = () => {
                 className="w-full h-full object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-              
+
               {/* Reaction Bubble */}
               <div className="absolute top-4 right-4 bg-white rounded-full p-3 shadow-lg">
-                <span className={`text-2xl transition-transform duration-300 ${pulseEffect ? 'scale-125' : 'scale-100'}`}>
+                <span
+                  className={`text-2xl transition-transform duration-300 ${
+                    pulseEffect ? "scale-125" : "scale-100"
+                  }`}
+                >
                   {reactions[activeReaction]}
                 </span>
               </div>

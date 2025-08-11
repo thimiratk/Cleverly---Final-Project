@@ -1,65 +1,62 @@
-import React from 'react';
-import {
-  MapPin,
-  Search,
-  Calendar,
-  Activity,
-  BarChart3,
-  Briefcase,
-  User,
-  Users,
-} from 'lucide-react';
+// src/components/Layout/Sidebar.jsx
+import React from "react";
+import { Bookmark, CheckCircle, Settings } from "lucide-react";
+import profileImage from "../../assets/profile.png"; // Update the filename to match your image
 
-const Sidebar = ({ activeTab, setActiveTab }) => {
-  const menuItems = [
-    { id: 'feed', icon: Calendar, label: 'Feed' },
-    { id: 'explore', icon: Search, label: 'Explore' },
-    { id: 'insights', icon: BarChart3, label: 'Insights' },
-    { id: 'activity', icon: Activity, label: 'Activity' },
-    { id: 'posts', icon: Briefcase, label: 'Posts' },
-    { id: 'wallet', icon: User, label: 'Wallet' },
-    { id: 'customers', icon: Users, label: 'Customers', badge: true }
-  ];
-
+const Sidebar = () => {
   return (
-    <div className="w-64 bg-white h-full border-r border-gray-200 p-4">
-      {/* Logo */}
-      <div className="flex items-center mb-8">
-        <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center mr-2">
-          <MapPin className="w-5 h-5 text-white" />
+    <div className="bg-gradient-to-b from-cyan-100 to-cyan-200 rounded-2xl p-4 h-fit">
+      {/* Profile Section */}
+      <div className="flex flex-col items-center mb-6">
+        <div className="w-16 h-16 rounded-full bg-gray-300 mb-3 overflow-hidden">
+          <img 
+            src={profileImage} 
+            alt="Profile"
+            className="w-full h-full object-cover"
+          />
+        </div>
+        <h3 className="font-semibold text-gray-800">Poorni Abeysekara</h3>
+      </div>
+
+      {/* Activities Section */}
+      <div className="mb-8">
+        <h4 className="text-sm font-semibold text-gray-700 mb-3 border-b border-cyan-300 pb-2">
+          Your Activities...
+        </h4>
+        <div className="space-y-3">
+          <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors">
+            <Bookmark className="w-4 h-4" />
+            <span className="text-sm">Saved</span>
+          </div>
+          <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors">
+            <CheckCircle className="w-4 h-4" />
+            <span className="text-sm">Suggestions</span>
+          </div>
         </div>
       </div>
 
-      {/* Menu Items */}
-      <nav className="space-y-2">
-        {menuItems.map((item) => (
-          <button
-            key={item.id}
-            onClick={() => setActiveTab(item.id)}
-            className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-colors ${
-              activeTab === item.id
-                ? 'bg-purple-600 text-white'
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <item.icon className="w-5 h-5 mr-3" />
-            <span className="flex-1">{item.label}</span>
-            {item.badge && (
-              <span className="w-2 h-2 bg-red-500 rounded-full"></span>
-            )}
-          </button>
-        ))}
-      </nav>
-
-      {/* Bottom Section */}
-      <div className="mt-auto pt-8">
-        <div className="text-sm text-gray-500 mb-2">Net Profit</div>
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-          <div>
-            <div className="font-medium text-gray-800">User</div>
-            <div className="text-xs text-gray-500">Profile</div>
+      {/* Bottom Profile Section */}
+      <div className="border-t border-cyan-300 pt-4">
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-10 h-10 rounded-full bg-gray-300 mb-2 overflow-hidden">
+            <img 
+              src={profileImage} 
+              alt="Profile Small"
+              className="w-full h-full object-cover"
+            />
           </div>
+          <span className="text-sm text-gray-700">You</span>
+        </div>
+
+        <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors mb-4">
+          <Settings className="w-4 h-4" />
+          <span className="text-sm">Settings</span>
+        </div>
+
+        {/* Footer Links */}
+        <div className="text-xs text-gray-600 space-y-1">
+          <p className="cursor-pointer hover:text-blue-600">Terms & Conditions</p>
+          <p className="cursor-pointer hover:text-blue-600">Privacy Policies</p>
         </div>
       </div>
     </div>
