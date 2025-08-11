@@ -1,6 +1,8 @@
 import Header from './Header'
 import React, { useState } from 'react'
 import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, MapPin, GraduationCap, Briefcase,Camera } from 'lucide-react'
+import image1 from '../../assets/image1.png'
+import image2 from '../../assets/image2.png'
 
 
 const UserProfileBar = () => {
@@ -30,38 +32,22 @@ const UserProfileBar = () => {
       likes: 12,
       views: 156,
       isLiked: false,
-      category: "Beauty & Personal Care"
+      category: "Beauty & Personal Care",
+      image :[image1]
     },
+
     {
       id: 2,
-      author: "Jack Gabel", 
-      time: "one week ago",
-      content: "Great value for the price. The display is sharp, and the battery lasts all day. Performance is solid for everyday tasks,...",
-      likes: 8,
-      views: 203,
-      isLiked: true,
-      category: "Electronics"
-    },
-    {
-      id: 3,
-      author: "Jack Gabel",
-      time: "two months ago", 
-      content: "The ride was okay, but the driver arrived 10 minutes late. Car was clean and the driver was polite, but the delay threw off my...",
-      likes: 3,
-      views: 89,
+      author: "Shen Fernando",
+      time: "3h",
+      content: "Absolutely love this body wash! It leaves my skin feeling soft and hydrated all day. The scent is refreshing but not overpowering....",
+      likes: 22,
+      views: 156,
       isLiked: false,
-      category: "Transportation"
+      category: "Beauty & Personal Care",
+      image :[image2]
     },
-    {
-      id: 4,
-      author: "Jack Gabel",
-      time: "three years ago",
-      content: "Disappointed with my visit. The pasta was overcooked, and the garlic bread was cold. Our server was friendly but seemed...",
-      likes: 15,
-      views: 234,
-      isLiked: false,
-      category: "Restaurants"
-    }
+    
   ])
 
   const [showExtraFeatures, setShowExtraFeatures] = useState(false)
@@ -375,6 +361,11 @@ const UserProfileBar = () => {
               {activities.map((activity) => (
                 <div key={activity.id} className="border-b border-gray-100 pb-4 last:border-b-0">
                   <div className="flex items-center justify-between mb-2">
+
+
+                  
+
+
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-800 text-sm">{activity.author}</span>
                       <span className="text-gray-400 text-sm">•</span>
@@ -413,6 +404,16 @@ const UserProfileBar = () => {
                     </div>
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed">{activity.content}</p>
+
+                  {activity.image && (
+                      <div className="mb-4 rounded-xl overflow-hidden">
+                        <img 
+                          src={activity.image}  
+                          alt="Activity content"
+                          className="w-full h-48 object-cover"
+                        />
+                      </div>
+                    )}
                 </div>
               ))}
             </div>

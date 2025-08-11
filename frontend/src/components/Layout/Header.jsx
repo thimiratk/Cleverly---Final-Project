@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Bell, Search, User, X } from 'lucide-react';
+import { Home, Bell, Search, User, X ,Users ,Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
@@ -65,6 +65,20 @@ const Header = () => {
             className="w-6 h-6 text-white cursor-pointer hover:text-blue-200 transition-colors" 
             onClick={() => handleNavigation('/')}
             title="Home"
+          />
+
+          {/* Trending Icon */}
+          <Flame 
+            className="w-6 h-6 text-white cursor-pointer hover:text-blue-200 transition-colors" 
+            onClick={() => handleNavigation('/trendings')} 
+            title="Trending" 
+          />
+
+          {/* Follwers Icon */}
+          <Users
+            className="w-6 h-6 text-white cursor-pointer hover:text-blue-200 transition-colors" 
+            onClick={() => handleNavigation('/followers')} 
+            title="Followers" 
           />
           
           {/* User Menu */}
