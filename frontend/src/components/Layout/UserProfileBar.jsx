@@ -135,6 +135,7 @@ const UserProfileBar = () => {
   }
 
   return (
+    <div className="pt-16">
     <div className="min-h-screen bg-gray-50">
       <Header />
       
@@ -484,6 +485,7 @@ const UserProfileBar = () => {
 
         </div>
       </div>
+    </div>
     </div>
   )
 }

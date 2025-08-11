@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Home, Bell, Search, User, X ,Users ,Flame } from 'lucide-react';
+import { Home, Bell, Search, User, X, Users, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
@@ -48,7 +48,8 @@ const Header = () => {
 
   return (
     <div className="relative">
-      <div className="bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-4 flex items-center justify-between">
+      {/* FIXED HEADER: Added fixed positioning classes to keep header at top during scroll */}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-4 flex items-center justify-between">
         
         {/* Logo / Title */}
         <div 
@@ -74,7 +75,7 @@ const Header = () => {
             title="Trending" 
           />
 
-          {/* Follwers Icon */}
+          {/* Followers Icon */}
           <Users
             className="w-6 h-6 text-white cursor-pointer hover:text-blue-200 transition-colors" 
             onClick={() => handleNavigation('/followers')} 
@@ -88,8 +89,9 @@ const Header = () => {
               onClick={() => setShowUserMenu(!showUserMenu)}
               title="User Menu"
             />
+            {/* DROPDOWN Z-INDEX: Increased z-index to ensure dropdown appears above fixed header */}
             {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-[60]">
                 <button
                   onClick={() => handleNavigation('/userprofile')}
                   className="w-full text-left px-4 py-2 text-gray-800 hover:bg-gray-100 transition-colors"
@@ -120,11 +122,13 @@ const Header = () => {
               onClick={() => setShowNotifications(!showNotifications)}
               title="Notifications"
             />
+            {/* NOTIFICATION BADGE: Badge positioned over bell icon */}
             <div className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
               {notifications.filter(n => n.unread).length}
             </div>
+            {/* DROPDOWN Z-INDEX: Increased z-index to ensure dropdown appears above fixed header */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto">
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-[60] max-h-96 overflow-y-auto">
                 <div className="px-4 py-2 border-b border-gray-200">
                   <h3 className="font-semibold text-gray-800">Notifications</h3>
                 </div>
@@ -177,8 +181,9 @@ const Header = () => {
                 }}
               />
             )}
+            {/* DROPDOWN Z-INDEX: Increased z-index to ensure dropdown appears above fixed header */}
             {showSearchResults && searchQuery && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 max-h-64 overflow-y-auto">
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-[60] max-h-64 overflow-y-auto">
                 <div className="px-4 py-2 border-b border-gray-200">
                   <h3 className="font-semibold text-gray-800 text-sm">Search Results</h3>
                 </div>
@@ -210,7 +215,7 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Overlay to close dropdowns */}
+      {/* OVERLAY TO CLOSE DROPDOWNS: Fixed overlay that covers entire screen when dropdowns are open */}
       {(showNotifications || showUserMenu || showSearchResults) && (
         <div
           className="fixed inset-0 z-40"
