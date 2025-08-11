@@ -1,7 +1,7 @@
 import Header from './Header'
 import React, { useState } from 'react'
-import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge,MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
-import image1 from '../../assets/image1.png'
+import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
+import image1 from '../../assets/Audi.png'
 import image2 from '../../assets/image2.png'
 
 const UserProfileBar = () => {
@@ -32,7 +32,7 @@ const UserProfileBar = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      image: image1
+      images: [image1, image2] // multiple images
     },
     {
       id: 2,
@@ -43,9 +43,8 @@ const UserProfileBar = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      image: image2
+      images: [image2]
     },
-    // Adding more activities to demonstrate scrolling
     {
       id: 3,
       author: "Jack Gabel",
@@ -55,7 +54,7 @@ const UserProfileBar = () => {
       views: 98,
       isLiked: true,
       category: "Electronics",
-      image: image1
+      images: [image1]
     },
     {
       id: 4,
@@ -66,7 +65,7 @@ const UserProfileBar = () => {
       views: 203,
       isLiked: false,
       category: "Home & Garden",
-      image: image2
+      images: [image2]
     },
     {
       id: 5,
@@ -77,11 +76,19 @@ const UserProfileBar = () => {
       views: 412,
       isLiked: true,
       category: "Health & Wellness",
-      image: image1
+      images: [image1]
     }
   ])
 
   const [showExtraFeatures, setShowExtraFeatures] = useState(false)
+  
+  // Track current image index for each activity for carousel
+  const [imageIndexes, setImageIndexes] = useState(
+    activities.reduce((acc, activity) => {
+      acc[activity.id] = 0
+      return acc
+    }, {})
+  )
 
   const handleNameSave = () => {
     setUserName(tempUserName)
@@ -133,11 +140,30 @@ const UserProfileBar = () => {
   const handleProfilePictureChange = () => {
     alert("Profile picture change functionality would open file selector or camera options")
   }
+  
+  // Handle prev image in carousel
+  const prevImage = (activityId) => {
+    setImageIndexes(prev => {
+      const currentIndex = prev[activityId]
+      const newIndex = currentIndex === 0 ? activities.find(a => a.id === activityId).images.length - 1 : currentIndex - 1
+      return {...prev, [activityId]: newIndex}
+    })
+  }
+  
+  // Handle next image in carousel
+  const nextImage = (activityId) => {
+    setImageIndexes(prev => {
+      const currentIndex = prev[activityId]
+      const length = activities.find(a => a.id === activityId).images.length
+      const newIndex = currentIndex === length - 1 ? 0 : currentIndex + 1
+      return {...prev, [activityId]: newIndex}
+    })
+  }
 
   return (
-    <div className="pt-16">
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <div className="pt-16">
       
       {/* Profile Header Section */}
       <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pb-20">
@@ -394,6 +420,8 @@ const UserProfileBar = () => {
                       <span className="text-gray-500 text-sm">{activity.time}</span>
                       <span className="text-blue-600 text-xs bg-blue-50 px-2 py-1 rounded">{activity.category}</span>
                     </div>
+                    
+                    {/* KEEP THIS CODE BLOCK EXACTLY AS YOU SHARED */}
                     <div className="flex items-center space-x-3">
                       <button 
                         onClick={() => toggleLike(activity.id)}
@@ -423,15 +451,34 @@ const UserProfileBar = () => {
                       </div>
                     </div>
                   </div>
-                  <p className="text-gray-700 text-sm leading-relaxed">{activity.content}</p>
-
-                  {activity.image && (
-                    <div className="mt-4 rounded-xl overflow-hidden">
-                      <img 
-                        src={activity.image}  
-                        alt="Activity content"
+                  <p className="text-gray-700 text-sm mb-3">{activity.content}</p>
+                  
+                  {/* Show multiple images with prev/next arrows */}
+                  {activity.images.length > 0 && (
+                    <div className="relative max-w-md mx-auto mb-4 rounded-lg overflow-hidden border border-gray-200">
+                      <img
+                        src={activity.images[imageIndexes[activity.id]]}
+                        alt={`Activity ${activity.id} image`}
                         className="w-full h-48 object-cover"
                       />
+                      {activity.images.length > 1 && (
+                        <>
+                          <button
+                            onClick={() => prevImage(activity.id)}
+                            className="absolute top-1/2 left-1 bg-black bg-opacity-30 text-white p-1 rounded-full transform -translate-y-1/2 hover:bg-opacity-50"
+                            aria-label="Previous image"
+                          >
+                            ‹
+                          </button>
+                          <button
+                            onClick={() => nextImage(activity.id)}
+                            className="absolute top-1/2 right-1 bg-black bg-opacity-30 text-white p-1 rounded-full transform -translate-y-1/2 hover:bg-opacity-50"
+                            aria-label="Next image"
+                          >
+                            ›
+                          </button>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -439,7 +486,7 @@ const UserProfileBar = () => {
             </div>
           </div>
 
-          {/* Performance Section - Fixed */}
+          {/* Performance Section - NO CHANGES as requested */}
           <div className="lg:col-span-3 lg:sticky lg:top-6 lg:self-start">
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
@@ -482,12 +529,12 @@ const UserProfileBar = () => {
               </div>
             </div>
           </div>
-
+          
         </div>
       </div>
-    </div>
+      </div>
     </div>
   )
 }
 
-export default UserProfileBar;
+export default UserProfileBar
