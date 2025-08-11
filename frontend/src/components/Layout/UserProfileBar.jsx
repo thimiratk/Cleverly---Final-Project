@@ -1,12 +1,11 @@
 import Header from './Header'
 import React, { useState } from 'react'
-import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, MapPin, GraduationCap, Briefcase,Camera } from 'lucide-react'
+import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge,MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
 import image1 from '../../assets/image1.png'
 import image2 from '../../assets/image2.png'
 
-
 const UserProfileBar = () => {
-    const [isEditingName, setIsEditingName] = useState(false)
+  const [isEditingName, setIsEditingName] = useState(false)
   const [userName, setUserName] = useState("Jack Gabel")
   const [tempUserName, setTempUserName] = useState(userName)
   
@@ -15,8 +14,8 @@ const UserProfileBar = () => {
   const [tempUserBio, setTempUserBio] = useState("")
   
   const [userDetails, setUserDetails] = useState({
-    school: "Lincoln High School, Denver",
-    university: "University of Colorado Boulder (BA in Communications)",
+    badge: "Electronic Expert",
+    job: "Software Engineer",
     location: "Denver, Colorado",
     work: "Amazon (Customer Experience Specialist)"
   })
@@ -33,9 +32,8 @@ const UserProfileBar = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      image :[image1]
+      image: image1
     },
-
     {
       id: 2,
       author: "Shen Fernando",
@@ -45,9 +43,42 @@ const UserProfileBar = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      image :[image2]
+      image: image2
     },
-    
+    // Adding more activities to demonstrate scrolling
+    {
+      id: 3,
+      author: "Jack Gabel",
+      time: "1d",
+      content: "This product exceeded my expectations! The quality is outstanding and the delivery was super fast. Highly recommend to anyone looking for...",
+      likes: 8,
+      views: 98,
+      isLiked: true,
+      category: "Electronics",
+      image: image1
+    },
+    {
+      id: 4,
+      author: "Jack Gabel",
+      time: "2d",
+      content: "Great value for money. The features are exactly what I needed and the customer service was excellent when I had questions...",
+      likes: 15,
+      views: 203,
+      isLiked: false,
+      category: "Home & Garden",
+      image: image2
+    },
+    {
+      id: 5,
+      author: "Jack Gabel",
+      time: "3d",
+      content: "I've been using this for a month now and I'm really impressed with the results. It's become a staple in my daily routine...",
+      likes: 31,
+      views: 412,
+      isLiked: true,
+      category: "Health & Wellness",
+      image: image1
+    }
   ])
 
   const [showExtraFeatures, setShowExtraFeatures] = useState(false)
@@ -93,6 +124,10 @@ const UserProfileBar = () => {
       }
       return activity
     }))
+  }
+
+  const handleComment = (activityId) => {
+    console.log("Comment on activity:", activityId)
   }
 
   const handleProfilePictureChange = () => {
@@ -157,201 +192,192 @@ const UserProfileBar = () => {
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="max-w-7xl mx-auto px-6 pb-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Main Content Grid with Fixed Sidebars */}
+      <div className="max-w-7xl mx-auto px-2 pb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 relative">
           
-          {/* About Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">About</h2>
-              <Grid3X3 className="w-5 h-5 text-gray-400" />
-            </div>
-            
-            {/* Bio Section */}
-            {userBio || isEditingBio ? (
-              <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium text-gray-700">Bio</h3>
-                  {!isEditingBio && (
-                    <button onClick={() => setIsEditingBio(true)} className="text-orange-500 hover:text-orange-600">
-                      <Edit3 className="w-4 h-4" />
-                    </button>
+          {/* About Section - Fixed */}
+          <div className="lg:col-span-3 lg:sticky lg:top-6 lg:self-start">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-800">About</h2>
+                <Grid3X3 className="w-5 h-5 text-gray-400" />
+              </div>
+              
+              {/* Bio Section */}
+              {userBio || isEditingBio ? (
+                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-700">Bio</h3>
+                    {!isEditingBio && (
+                      <button onClick={() => setIsEditingBio(true)} className="text-orange-500 hover:text-orange-900">
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  {isEditingBio ? (
+                    <div>
+                      <textarea
+                        value={tempUserBio}
+                        onChange={(e) => setTempUserBio(e.target.value)}
+                        className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
+                        rows="3"
+                        placeholder="Tell us about yourself..."
+                        autoFocus
+                      />
+                      <div className="flex justify-end space-x-2 mt-2">
+                        <button onClick={handleBioCancel} className="text-red-500 hover:text-red-600">
+                          <X className="w-4 h-4" />
+                        </button>
+                        <button onClick={handleBioSave} className="text-green-500 hover:text-green-600">
+                          <Save className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-gray-600 text-sm">{userBio}</p>
                   )}
                 </div>
-                {isEditingBio ? (
-                  <div>
-                    <textarea
-                      value={tempUserBio}
-                      onChange={(e) => setTempUserBio(e.target.value)}
-                      className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
-                      rows="3"
-                      placeholder="Tell us about yourself..."
-                      autoFocus
-                    />
-                    <div className="flex justify-end space-x-2 mt-2">
-                      <button onClick={handleBioCancel} className="text-red-500 hover:text-red-600">
-                        <X className="w-4 h-4" />
+              ) : null}
+              
+              {/* Details Section */}
+              <div className="space-y-4 text-sm">
+                {isEditingDetails ? (
+                  <div className="space-y-3">
+                    
+                    <div className="flex flex-col">
+                      <label className="text-gray-600 mb-1 flex items-center">
+                        <Briefcase  className="w-4 h-4 mr-1" />
+                        Job
+                      </label>
+                      <input
+                        type="text"
+                        value={tempDetails.job}
+                        onChange={(e) => setTempDetails({...tempDetails, job: e.target.value})}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-gray-600 mb-1 flex items-center">
+                        <MapPin className="w-4 h-4 mr-1" />
+                        Lives in
+                      </label>
+                      <input
+                        type="text"
+                        value={tempDetails.location}
+                        onChange={(e) => setTempDetails({...tempDetails, location: e.target.value})}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="text-gray-600 mb-1 flex items-center">
+                        <Briefcase className="w-4 h-4 mr-1" />
+                        Works at
+                      </label>
+                      <input
+                        type="text"
+                        value={tempDetails.work}
+                        onChange={(e) => setTempDetails({...tempDetails, work: e.target.value})}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      />
+                    </div>
+                    <div className="flex justify-end space-x-2 mt-4">
+                      <button 
+                        onClick={handleDetailsCancel}
+                        className="px-3 py-1 text-red-500 hover:text-red-600 border border-red-200 rounded"
+                      >
+                        Cancel
                       </button>
-                      <button onClick={handleBioSave} className="text-green-500 hover:text-green-600">
-                        <Save className="w-4 h-4" />
+                      <button 
+                        onClick={handleDetailsave}
+                        className="px-3 py-1 text-green-500 hover:text-green-600 border border-green-200 rounded"
+                      >
+                        Save
                       </button>
                     </div>
                   </div>
                 ) : (
-                  <p className="text-gray-600 text-sm">{userBio}</p>
+                  <>
+                    <div className="flex items-start">
+                      <Badge  className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
+                      <div>
+                        <span className="text-gray-600">Badge : </span>
+                        <span className="text-gray-800">{userDetails.badge}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Briefcase  className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
+                      <div>
+                        <span className="text-gray-600">Job : </span>
+                        <span className="text-gray-800">{userDetails.job}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <MapPin className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
+                      <div>
+                        <span className="text-gray-600">Lives in </span>
+                        <span className="text-gray-800">{userDetails.location}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-start">
+                      <Briefcase className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
+                      <div>
+                        <span className="text-gray-600">Works at </span>
+                        <span className="text-gray-800">{userDetails.work}</span>
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
-            ) : null}
-            
-            {/* Details Section */}
-            <div className="space-y-4 text-sm">
-              {isEditingDetails ? (
-                <div className="space-y-3">
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 mb-1 flex items-center">
-                      <GraduationCap className="w-4 h-4 mr-1" />
-                      Went to
-                    </label>
-                    <input
-                      type="text"
-                      value={tempDetails.school}
-                      onChange={(e) => setTempDetails({...tempDetails, school: e.target.value})}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 mb-1 flex items-center">
-                      <GraduationCap className="w-4 h-4 mr-1" />
-                      Studied at
-                    </label>
-                    <input
-                      type="text"
-                      value={tempDetails.university}
-                      onChange={(e) => setTempDetails({...tempDetails, university: e.target.value})}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 mb-1 flex items-center">
-                      <MapPin className="w-4 h-4 mr-1" />
-                      Lives in
-                    </label>
-                    <input
-                      type="text"
-                      value={tempDetails.location}
-                      onChange={(e) => setTempDetails({...tempDetails, location: e.target.value})}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
-                  </div>
-                  <div className="flex flex-col">
-                    <label className="text-gray-600 mb-1 flex items-center">
-                      <Briefcase className="w-4 h-4 mr-1" />
-                      Works at
-                    </label>
-                    <input
-                      type="text"
-                      value={tempDetails.work}
-                      onChange={(e) => setTempDetails({...tempDetails, work: e.target.value})}
-                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                    />
-                  </div>
-                  <div className="flex justify-end space-x-2 mt-4">
-                    <button 
-                      onClick={handleDetailsCancel}
-                      className="px-3 py-1 text-red-500 hover:text-red-600 border border-red-200 rounded"
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      onClick={handleDetailsave}
-                      className="px-3 py-1 text-green-500 hover:text-green-600 border border-green-200 rounded"
-                    >
-                      Save
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <div className="flex items-start">
-                    <GraduationCap className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
-                    <div>
-                      <span className="text-gray-600">Went to </span>
-                      <span className="text-gray-800">{userDetails.school}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <GraduationCap className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
-                    <div>
-                      <span className="text-gray-600">Studied at </span>
-                      <span className="text-gray-800">{userDetails.university}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <MapPin className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
-                    <div>
-                      <span className="text-gray-600">Lives in </span>
-                      <span className="text-gray-800">{userDetails.location}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-start">
-                    <Briefcase className="w-4 h-4 text-gray-500 mr-2 mt-0.5" />
-                    <div>
-                      <span className="text-gray-600">Works at </span>
-                      <span className="text-gray-800">{userDetails.work}</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
 
-            <div className="mt-6 space-y-3">
-              {!userBio && !isEditingBio && (
+              <div className="mt-6 space-y-3">
+                {!userBio && !isEditingBio && (
+                  <button 
+                    onClick={() => setIsEditingBio(true)}
+                    className="w-full bg-blue-100 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Bio
+                  </button>
+                )}
                 <button 
-                  onClick={() => setIsEditingBio(true)}
-                  className="w-full bg-blue-100 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors flex items-center justify-center"
+                  onClick={() => setIsEditingDetails(!isEditingDetails)}
+                  className="w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Bio
+                  {isEditingDetails ? 'Cancel Edit' : 'Edit Details'}
                 </button>
-              )}
-              <button 
-                onClick={() => setIsEditingDetails(!isEditingDetails)}
-                className="w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {isEditingDetails ? 'Cancel Edit' : 'Edit Details'}
-              </button>
-              <button 
-                onClick={() => setShowExtraFeatures(!showExtraFeatures)}
-                className="w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {showExtraFeatures ? 'Hide Extra Features' : 'Add Extra Features'}
-              </button>
-              
-              {showExtraFeatures && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium text-gray-700 mb-3">Extra Features</h4>
-                  <div className="space-y-2">
-                    <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                      📱 Add Social Links
-                    </button>
-                    <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                      🏆 Add Achievements
-                    </button>
-                    <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                      📊 Add Skills
-                    </button>
-                    <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                      🎯 Add Interests
-                    </button>
+                <button 
+                  onClick={() => setShowExtraFeatures(!showExtraFeatures)}
+                  className="w-full bg-gray-100 text-gray-600 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  {showExtraFeatures ? 'Hide Extra Features' : 'Add Extra Features'}
+                </button>
+                
+                {showExtraFeatures && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="font-medium text-gray-700 mb-3">Extra Features</h4>
+                    <div className="space-y-2">
+                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
+                        📱 Add Social Links
+                      </button>
+                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
+                        🏆 Add Achievements
+                      </button>
+                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
+                        📊 Add Skills
+                      </button>
+                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
+                        🎯 Add Interests
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Your Activities Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* Your Activities Section - Scrollable */}
+          <div className="lg:col-span-6 bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-800">Your Activities</h2>
               <Grid3X3 className="w-5 h-5 text-gray-400" />
@@ -361,11 +387,6 @@ const UserProfileBar = () => {
               {activities.map((activity) => (
                 <div key={activity.id} className="border-b border-gray-100 pb-4 last:border-b-0">
                   <div className="flex items-center justify-between mb-2">
-
-
-                  
-
-
                     <div className="flex items-center space-x-2">
                       <span className="font-medium text-gray-800 text-sm">{activity.author}</span>
                       <span className="text-gray-400 text-sm">•</span>
@@ -389,74 +410,74 @@ const UserProfileBar = () => {
                       <div className="flex items-center space-x-1">
                         <Eye className="w-4 h-4 text-gray-400" />
                         <span className="text-xs text-gray-500">{activity.views}</span>
-                          
-                        <div className="flex items-center space-x-1">
-                         <button
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <button
                           onClick={() => handleComment(activity.id)}
                           className="flex items-center space-x-1 text-sm text-gray-400 hover:text-blue-500 transition-colors"
-                            >
-                            <MessageSquare className="w-4 h-4" />
+                        >
+                          <MessageSquare className="w-4 h-4" />
                           <span>Comment</span>
                         </button>
-                        </div>
-
                       </div>
                     </div>
                   </div>
                   <p className="text-gray-700 text-sm leading-relaxed">{activity.content}</p>
 
                   {activity.image && (
-                      <div className="mb-4 rounded-xl overflow-hidden">
-                        <img 
-                          src={activity.image}  
-                          alt="Activity content"
-                          className="w-full h-48 object-cover"
-                        />
-                      </div>
-                    )}
+                    <div className="mt-4 rounded-xl overflow-hidden">
+                      <img 
+                        src={activity.image}  
+                        alt="Activity content"
+                        className="w-full h-48 object-cover"
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Performance Section */}
-          <div className="bg-white rounded-lg shadow-sm p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-800">Performance</h2>
-              <Grid3X3 className="w-5 h-5 text-gray-400" />
-            </div>
-            
-            <div className="space-y-6">
-              <div className="flex justify-between items-start">
-                <div className="text-center p-4 bg-green-50 rounded-lg flex-1 mr-2">
-                  <h3 className="text-gray-600 text-sm mb-1">Trust Score</h3>
-                  <div className="text-3xl font-bold text-green-600">100/100</div>
-                  <div className="text-xs text-gray-500 mt-1">Perfect Rating</div>
-                </div>
-                <div className="text-center p-4 bg-blue-50 rounded-lg flex-1 ml-2">
-                  <h3 className="text-gray-600 text-sm mb-1 flex items-center justify-center">
-                    Total Views
-                    <Eye className="w-4 h-4 ml-1" />
-                  </h3>
-                  <div className="text-3xl font-bold text-blue-600">
-                    {activities.reduce((sum, activity) => sum + activity.views, 0)}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-1">All Time</div>
-                </div>
+          {/* Performance Section - Fixed */}
+          <div className="lg:col-span-3 lg:sticky lg:top-6 lg:self-start">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-semibold text-gray-800">Performance</h2>
+                <Grid3X3 className="w-5 h-5 text-gray-400" />
               </div>
               
-              <div className="text-center p-4 bg-purple-50 rounded-lg">
-                <h3 className="text-gray-600 text-sm mb-1">Profile Views</h3>
-                <div className="text-3xl font-bold text-purple-600">23</div>
-                <div className="text-xs text-gray-500 mt-1">This Month</div>
-              </div>
-
-              <div className="text-center p-4 bg-orange-50 rounded-lg">
-                <h3 className="text-gray-600 text-sm mb-1">Total Likes</h3>
-                <div className="text-3xl font-bold text-orange-600">
-                  {activities.reduce((sum, activity) => sum + activity.likes, 0)}
+              <div className="space-y-6">
+                <div className="flex justify-between items-start">
+                  <div className="text-center p-4 bg-green-50 rounded-lg flex-1 mr-2">
+                    <h3 className="text-gray-600 text-sm mb-1">Trust Score</h3>
+                    <div className="text-3xl font-bold text-green-600">100/100</div>
+                    <div className="text-xs text-gray-500 mt-1">Perfect Rating</div>
+                  </div>
+                  <div className="text-center p-4 bg-blue-50 rounded-lg flex-1 ml-2">
+                    <h3 className="text-gray-600 text-sm mb-1 flex items-center justify-center">
+                      Total Views
+                      <Eye className="w-4 h-4 ml-1" />
+                    </h3>
+                    <div className="text-3xl font-bold text-blue-600">
+                      {activities.reduce((sum, activity) => sum + activity.views, 0)}
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">All Time</div>
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500 mt-1">All Reviews</div>
+                
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <h3 className="text-gray-600 text-sm mb-1">Profile Views</h3>
+                  <div className="text-3xl font-bold text-purple-600">23</div>
+                  <div className="text-xs text-gray-500 mt-1">This Month</div>
+                </div>
+
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <h3 className="text-gray-600 text-sm mb-1">Total Likes</h3>
+                  <div className="text-3xl font-bold text-orange-600">
+                    {activities.reduce((sum, activity) => sum + activity.likes, 0)}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">All Reviews</div>
+                </div>
               </div>
             </div>
           </div>
