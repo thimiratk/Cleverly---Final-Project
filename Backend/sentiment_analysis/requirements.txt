@@ -1,0 +1,14 @@
+# Basic requirements (always needed)
+textblob>=0.17.1
+
+# Advanced requirements (for better accuracy)
+transformers>=4.21.0
+torch>=1.12.0
+sentencepiece>=0.1.97
+
+# Optional: For faster inference
+accelerate>=0.20.0
+
+# Development/testing
+pytest>=7.0.0
+jupyter>=1.0.0
