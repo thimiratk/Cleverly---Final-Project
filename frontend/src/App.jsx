@@ -6,6 +6,7 @@ import Header from './components/Layout/Header'
 import Sidebar from './components/Layout/Sidebar'
 import UserProfileBar from './components/Layout/UserProfileBar'
 import Home from './pages/HomePage/Home'
+import ModeratorDashboard from './components/Layout/ModeratorDashboard'
 
 
 function App() {
@@ -18,6 +19,7 @@ function App() {
         <Route path="/header" element={<Header/>} />
         <Route path="/sidebar" element={<Sidebar/>} />
         <Route path="/userprofile" element={<UserProfileBar/>} />
+        <Route path='/moderator' element={<ModeratorDashboard />} />
   
       </Routes>
     </>

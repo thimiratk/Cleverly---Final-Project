@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
 import image1 from '../../assets/Audi.png'
 import image2 from '../../assets/image2.png'
+import Audi2 from '../../assets/Audi2.png'
 
 const UserProfileBar = () => {
   const [isEditingName, setIsEditingName] = useState(false)
@@ -32,11 +33,11 @@ const UserProfileBar = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      images: [image1, image2] // multiple images
+      images: [image1, Audi2] // multiple images
     },
     {
       id: 2,
-      author: "Shen Fernando",
+      author: "Jack Gabel",
       time: "3h",
       content: "Absolutely love this body wash! It leaves my skin feeling soft and hydrated all day. The scent is refreshing but not overpowering....",
       likes: 22,
