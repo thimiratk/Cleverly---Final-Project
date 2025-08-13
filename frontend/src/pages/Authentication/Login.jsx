@@ -3,6 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Img from '../../assets/login.png';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
+import axios from "axios";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,6 +11,7 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Simple form validation
   const validateForm = () => {
@@ -33,26 +35,64 @@ export default function Login() {
     return true;
   };
 
+  const api_base = "https://fictional-waddle-wrv676r79wvg2976j-4000.app.github.dev/api/auth/";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!validateForm()) return;
 
+    setIsLoading(true);
+
     try {
-      const loginData = { email, password, rememberMe };
+      const response = await axios.post(
+        `${api_base}login`,
+        {
+          email,
+          password,
+          rememberMe
+        },
+        {
+          headers: { "Content-Type": "application/json" }
+        }
+      );
 
-      // TODO: Replace this with your actual login API call
-      // const response = await fetch('/api/login', {...})
+      // Log the full response to see what you're getting
+      console.log("Full response:", response);
+      console.log("Response data:", response.data);
+      console.log("Response status:", response.status);
 
-      console.log('Login data:', loginData);
-      
-      // For demo, navigate to role selection
-      navigate('/roleselection');
+      // Check if login was actually successful based on your backend's response format
+      if (response.data.success === true) {
+        toast.success("Login successful!");
+        // Redirect after successful login
+        navigate("/roleselection");
+      } else {
+        // Handle cases where response comes back but login failed
+        toast.error("Login failed. Please check your credentials.");
+      }
 
-      toast.success("Login successful!");
     } catch (error) {
       console.error("Login error:", error);
-      toast.error("Login failed. Please check your credentials.");
+      
+      if (error.response) {
+        // Server responded with error status
+        console.log("Error response data:", error.response.data);
+        console.log("Error status:", error.response.status);
+        
+        const errorMessage = error.response.data.message || 
+                           error.response.data.error || 
+                           "Login failed. Please check your credentials.";
+        toast.error(errorMessage);
+      } else if (error.request) {
+        // Network error - request was made but no response received
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        // Something else happened
+        toast.error("Something went wrong. Please try again.");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -89,6 +129,7 @@ export default function Login() {
                 className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 placeholder="anna@gmail.com"
                 autoComplete="email"
+                disabled={isLoading}
               />
             </div>
 
@@ -106,12 +147,14 @@ export default function Login() {
                   className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   placeholder="Password"
                   autoComplete="current-password"
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  disabled={isLoading}
                 >
                   {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
                 </button>
@@ -126,6 +169,7 @@ export default function Login() {
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  disabled={isLoading}
                 />
                 <span className="text-sm text-gray-600">Remember me</span>
               </label>
@@ -141,9 +185,10 @@ export default function Login() {
             {/* Sign In Button */}
             <button
               type="submit"
-              className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium"
+              disabled={isLoading}
+              className="w-full bg-blue-500 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
 

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Star, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import axios from "axios";
+
+const api_base = 'https://fictional-waddle-wrv676r79wvg2976j-4000.app.github.dev/api/auth/'
 
 const CleverlySignUp = () => {
   const [formData, setFormData] = useState({
@@ -60,18 +63,36 @@ const CleverlySignUp = () => {
     return true;
   };
 
-  // Submit handler
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    // TODO: API call here
-    console.log("Form submitted:", formData);
+  try {
+    const response = await axios.post(`${api_base}register`, {
+      email: formData.email,
+      password: formData.password
+    });
+
     toast.success("Sign up successful!");
+    console.log("Server response:", response.data);
 
-    // Optionally reset form
+    // Optionally store token if backend sends one
+    if (response.data.token) {
+      localStorage.setItem("token", response.data.token);
+    }
+
+    // Reset form after success
     setFormData({ email: "", password: "", confirmPassword: "" });
-  };
+
+  } catch (error) {
+    if (error.response) {
+      toast.error(error.response.data.message || "Sign up failed");
+    } else {
+      toast.error("Something went wrong. Please try again.");
+    }
+    console.error("API error:", error);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex">
