@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-// auth-service/src/models/User.js
-const mongoose = require('mongoose');
 
 const oauthProviderSchema = new mongoose.Schema({
   provider: { type: String, required: true },  // 'google', 'facebook', etc.
@@ -27,6 +25,9 @@ const userSchema = new mongoose.Schema({
 
 
 const User = mongoose.models.user || mongoose.model("User", userSchema);
+
+export default User;
+
 
 
 
