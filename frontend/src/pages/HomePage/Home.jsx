@@ -4,7 +4,7 @@ import Dashboard from "../../components/Dashboard";
 
 const Home = () => {
   return (
-    <div className="w-full">
+    <div className="w-full mt-16">
       <Dashboard />
     </div>
   );

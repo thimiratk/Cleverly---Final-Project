@@ -25,7 +25,7 @@ const AppLayout = () => {
           </section>
           
           {/* Right Sidebar */}
-          <aside className="hidden lg:block w-72 sticky top-6 self-start">
+          <aside className="hidden lg:block w-72 sticky top-10 self-start">
             <RightSidebar />
           </aside>
         </div>

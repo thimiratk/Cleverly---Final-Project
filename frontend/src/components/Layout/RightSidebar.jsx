@@ -25,9 +25,9 @@ const RightSidebar = () => {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-12">
       {/* Popular Categories */}
-      <div className="bg-gradient-to-b from-yellow-100 to-cyan-200 rounded-2xl p-4 h-fit">
+      <div className="bg-gradient-to-b from-cyan-100 to-cyan-200 rounded-2xl p-4 h-fit">
         <h3 className="font-semibold text-gray-800 mb-4">Popular Categories</h3>
         <div className="space-y-2">
           {categories.map((category, index) => (
@@ -42,7 +42,7 @@ const RightSidebar = () => {
       </div>
 
       {/* Active People */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm">
+      <div className="bg-gradient-to-b from-cyan-100 to-cyan-200 rounded-2xl p-4 h-fit">
         <h3 className="font-semibold text-gray-800 mb-4">Active People</h3>
         <div className="space-y-3">
           {people.map((person, index) => (

@@ -16,12 +16,12 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="userprofile" element={<UserProfile />} />
 
       {/* Main Application Routes (with AppLayout) */}
       <Route path="/" element={<AppLayout />}>
         {/* These components will be rendered inside the <Outlet /> in AppLayout */}
         <Route index element={<Home />} />
-        <Route path="userprofile" element={<UserProfile />} />
         
         {/* You can add more routes here for other pages */}
       </Route>
