@@ -27,29 +27,15 @@ const notifications = [
     y: 50 + Math.sin(i * 0.3) * 20 + Math.random() * 10
   }));
 
-  const SmallChart = ({ title, color = "#ef4444" }) => (
-    <div className="bg-black p-4 rounded">
-      <h4 className="text-white text-sm mb-3">{title}</h4>
+  const SmallChart = ({ title, color = "#e2922aff" }) => (
+    <div className="bg-white p-4 rounded">
+      <h4 className="text-black text-sm mb-3">{title}</h4>
       <svg width="100%" height="80" viewBox="0 0 200 80" className="overflow-visible">
         <polyline
           fill="none"
           stroke={color}
           strokeWidth="2"
           points={chartData.slice(0, 30).map((point, i) => `${i * 6},${80 - point.y}`).join(' ')}
-        />
-      </svg>
-    </div>
-  );
-
-  const LargeChart = ({ title }) => (
-    <div className="bg-black p-4 rounded">
-      <h4 className="text-white text-sm mb-3">{title}</h4>
-      <svg width="100%" height="120" viewBox="0 0 400 120" className="overflow-visible">
-        <polyline
-          fill="none"
-          stroke="#ef4444"
-          strokeWidth="2"
-          points={chartData.map((point, i) => `${i * 8},${120 - point.y}`).join(' ')}
         />
       </svg>
     </div>
@@ -80,7 +66,7 @@ const notifications = [
       {/* Profile Info */}
       <div className="pt-20 pb-8 text-center">
         <div className="flex items-center justify-center space-x-2">
-          <h1 className="text-2xl font-bold text-gray-800">Paul Heyman</h1>
+          <h1 className="text-2xl font-bold text-gray-800">Nevil Perera</h1>
           <Shield className="w-6 h-6 text-blue-500" />
         </div>
         <div className="flex items-center justify-center space-x-2 mt-2">
@@ -203,9 +189,7 @@ const notifications = [
             <SmallChart title="User Engagements (Weekly)" />
           </div>
 
-          <div className="grid grid-cols-1 gap-6">
-            <LargeChart title="User Engagements (Weekly)" />
-          </div>
+          
         </div>
 
       </div>

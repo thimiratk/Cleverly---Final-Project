@@ -1,6 +1,6 @@
 import Header from './Header'
 import React, { useState } from 'react'
-import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
+import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, Briefcase, Camera } from 'lucide-react'
 import image1 from '../../assets/Audi.png'
 import image2 from '../../assets/image2.png'
 import Audi2 from '../../assets/Audi2.png'
@@ -167,7 +167,7 @@ const UserProfileBar = () => {
       <div className="pt-16">
       
       {/* Profile Header Section */}
-      <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pb-20">
+      <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pb-30">
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
           <div className="relative">
             <img 
