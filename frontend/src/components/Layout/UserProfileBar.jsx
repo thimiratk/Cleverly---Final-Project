@@ -1,6 +1,6 @@
 import Header from './Header'
 import React, { useState } from 'react'
-import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, Briefcase, Camera } from 'lucide-react'
+import { Edit3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, Briefcase, Camera } from 'lucide-react'
 import image1 from '../../assets/Audi.png'
 import image2 from '../../assets/image2.png'
 import Audi2 from '../../assets/Audi2.png'
@@ -27,6 +27,35 @@ const UserProfileBar = () => {
   //Add profile image state
   const [profileImage, setProfileImage] = useState("https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format")
   
+  //
+const [extraFeatures, setExtraFeatures] = useState({
+  socialLinks: { linkedin: '', twitter: '', github: '', instagram: '' },
+  achievements: [],
+  skills: [],
+  interests: []
+});
+
+const [newItem, setNewItem] = useState({ achievement: '', skill: '', interest: '' });
+
+// 
+const handleSocialLinkChange = (platform, value) => {
+  setExtraFeatures(prev => ({
+    ...prev,
+    socialLinks: { ...prev.socialLinks, [platform]: value }
+  }));
+};
+
+const handleAddItem = (type) => {
+  if (newItem[type].trim()) {
+    setExtraFeatures(prev => ({
+      ...prev,
+      [type + 's']: [...prev[type + 's'], newItem[type]]
+    }));
+    setNewItem(prev => ({ ...prev, [type]: '' }));
+  }
+};
+
+
   
   const [activities, setActivities] = useState([
     {
@@ -226,7 +255,6 @@ const UserProfileBar = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">About</h2>
-                <Grid3X3 className="w-5 h-5 text-gray-400" />
               </div>
               
               {/* Bio Section */}
@@ -389,9 +417,6 @@ const UserProfileBar = () => {
                         🏆 Add Achievements
                       </button>
                       <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                        📊 Add Skills
-                      </button>
-                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
                         🎯 Add Interests
                       </button>
                     </div>
@@ -405,7 +430,6 @@ const UserProfileBar = () => {
           <div className="lg:col-span-6 bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-800">Your Activities</h2>
-              <Grid3X3 className="w-5 h-5 text-gray-400" />
             </div>
             
             <div className="space-y-4">
@@ -489,7 +513,6 @@ const UserProfileBar = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Performance</h2>
-                <Grid3X3 className="w-5 h-5 text-gray-400" />
               </div>
               
               <div className="space-y-6">

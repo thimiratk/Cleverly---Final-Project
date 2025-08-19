@@ -9,6 +9,7 @@ import Home from './pages/HomePage/Home'
 import ModeratorDashboard from './components/Layout/ModeratorDashboard'
 import NotFound from './pages/NotFound/NotFound'
 import ImageUpload from './components/ImageUpload/ImageUpload'
+import Setting from './pages/Setting/Setting'
 
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
         <Route path='/moderator' element={<ModeratorDashboard />} />
         <Route path='/notfound' element={<NotFound />} />
         <Route path='/imageUpload' element={<ImageUpload />} />
-  
+        <Route path='/setting' element={<Setting />} />
       </Routes>
     </>
   )
