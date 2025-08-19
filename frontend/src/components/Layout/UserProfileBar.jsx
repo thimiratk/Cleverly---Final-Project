@@ -4,6 +4,7 @@ import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin
 import image1 from '../../assets/Audi.png'
 import image2 from '../../assets/image2.png'
 import Audi2 from '../../assets/Audi2.png'
+import ImageUpload from '../ImageUpload/ImageUpload'
 
 const UserProfileBar = () => {
   const [isEditingName, setIsEditingName] = useState(false)
@@ -22,6 +23,10 @@ const UserProfileBar = () => {
   })
   const [isEditingDetails, setIsEditingDetails] = useState(false)
   const [tempDetails, setTempDetails] = useState(userDetails)
+
+  //Add profile image state
+  const [profileImage, setProfileImage] = useState("https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format")
+  
   
   const [activities, setActivities] = useState([
     {
@@ -121,6 +126,12 @@ const UserProfileBar = () => {
     setIsEditingDetails(false)
   }
 
+    // Add profile image change handler
+  const handleProfileImageChange = (newImageUrl) => {
+    setProfileImage(newImageUrl)
+    console.log('Profile image updated:', newImageUrl)
+  }
+
   const toggleLike = (activityId) => {
     setActivities(activities.map(activity => {
       if (activity.id === activityId) {
@@ -137,11 +148,7 @@ const UserProfileBar = () => {
   const handleComment = (activityId) => {
     console.log("Comment on activity:", activityId)
   }
-
-  const handleProfilePictureChange = () => {
-    alert("Profile picture change functionality would open file selector or camera options")
-  }
-  
+ 
   // Handle prev image in carousel
   const prevImage = (activityId) => {
     setImageIndexes(prev => {
@@ -169,20 +176,10 @@ const UserProfileBar = () => {
       {/* Profile Header Section */}
       <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pb-30">
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-          <div className="relative">
-            <img 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format" 
-              alt={userName} 
-              className="w-32 h-32 rounded-full border-4 border-white object-cover cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={handleProfilePictureChange}
-            />
-            <button 
-              onClick={handleProfilePictureChange}
-              className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-50 shadow-lg transition-colors"
-            >
-              <Camera className="w-4 h-4 text-orange-500" />
-            </button>
-          </div>
+          <ImageUpload
+            currentImage={profileImage}
+            onImageChange={handleProfileImageChange}
+          />
         </div>
       </div>
 

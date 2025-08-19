@@ -8,6 +8,7 @@ import UserProfileBar from './components/Layout/UserProfileBar'
 import Home from './pages/HomePage/Home'
 import ModeratorDashboard from './components/Layout/ModeratorDashboard'
 import NotFound from './pages/NotFound/NotFound'
+import ImageUpload from './components/ImageUpload/ImageUpload'
 
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
         <Route path="/userprofile" element={<UserProfileBar/>} />
         <Route path='/moderator' element={<ModeratorDashboard />} />
         <Route path='/notfound' element={<NotFound />} />
+        <Route path='/imageUpload' element={<ImageUpload />} />
   
       </Routes>
     </>
