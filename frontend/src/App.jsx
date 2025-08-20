@@ -7,7 +7,7 @@ import Login from './pages/Authentication/Login';
 import SignUp from './pages/Authentication/SignUp';
 import ForgotPassword from './pages/Authentication/ForgotPassword';
 import UserProfile from './pages/UserProfile/UserProfile';
-
+import Trendings from "./pages/Authentication/Trendings";
 
 function App() {
   return (  
@@ -22,9 +22,10 @@ function App() {
       <Route path="/" element={<AppLayout />}>
         {/* These components will be rendered inside the <Outlet /> in AppLayout */}
         <Route index element={<Home />} />
-        
-        {/* You can add more routes here for other pages */}
       </Route>
+
+      {/* Trendings page without AppLayout */}
+      <Route path="/trendings" element={<Trendings />} />
     </Routes>
   );
 }

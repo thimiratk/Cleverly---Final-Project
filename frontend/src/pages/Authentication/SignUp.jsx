@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Star, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa"; // add at top
+
+
 
 const CleverlySignUp = () => {
   const [formData, setFormData] = useState({
@@ -90,10 +93,19 @@ const CleverlySignUp = () => {
 
           {/* Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
+             <input
+              type="username"
+              name="username"
+              placeholder="username"
+              value={formData.username}
+              onChange={handleInputChange}
+              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+              autoComplete="username"
+            />
             <input
               type="email"
               name="email"
-              placeholder="User name or E-mail"
+              placeholder="E-mail"
               value={formData.email}
               onChange={handleInputChange}
               className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
@@ -135,15 +147,16 @@ const CleverlySignUp = () => {
             <div className="flex-1 border-t border-gray-200"></div>
           </div>
 
-          {/* Social Login */}
+        {/* Social Login */}
           <div className="flex justify-center space-x-4 mb-6">
             <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-              <span className="text-sm font-bold">f</span>
+            <FaGoogle className="w-6 h-6" />
             </button>
-            <button className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
-              <span className="text-sm font-bold">in</span>
-            </button>
+            <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+            <FaFacebook className="w-6 h-6" />
+           </button>
           </div>
+
 
           {/* Footer Links */}
           <div className="text-center space-y-2">
