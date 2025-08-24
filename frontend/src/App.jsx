@@ -5,7 +5,6 @@ import SignUp from './pages/Authentication/SignUp'
 import Header from './components/Layout/Header'
 import Sidebar from './components/Layout/Sidebar'
 import UserProfileBar from './components/Layout/UserProfileBar'
-import Home from './pages/HomePage/Home'
 import ModeratorDashboard from './components/Layout/ModeratorDashboard'
 import NotFound from './pages/NotFound/NotFound'
 import ImageUpload from './components/ImageUpload/ImageUpload'
@@ -16,7 +15,7 @@ function App() {
   return (
     <>
       <Routes>
-        <Route path="/" element={<Home />} />
+      
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/header" element={<Header/>} />
@@ -31,4 +30,4 @@ function App() {
   )
 }
 
-export default App
+export default App;
