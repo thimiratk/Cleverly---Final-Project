@@ -6,10 +6,10 @@ from sklearn.metrics import classification_report
 import joblib
 
 # 1. Load CSV file
-# Make sure your CSV has columns: "text" and "label"
+# Making sure the CSV has columns: "text" and "label"
 df = pd.read_csv("fake_reviews.csv")  
 
-# Optional: if your CSV has no train/test split, we’ll create one
+# making sure CSV has no train/test split then creating it if it's not there..
 from sklearn.model_selection import train_test_split
 df_train, df_test = train_test_split(df, test_size=0.2, random_state=42)
 
@@ -42,7 +42,7 @@ joblib.dump(vectorizer, "vectorizer.pkl")
 print("Model and vectorizer saved successfully.")
 
 
-
+# hello world
 
 
 

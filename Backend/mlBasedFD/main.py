@@ -10,5 +10,5 @@ if __name__ == "__main__":
     train_model(data_path, model_path, vec_path)
 
     # Test prediction
-    sample_review = "This product is amazing and exceeded all my expectations!"
+    sample_review = "This product is good and met my expectations!"
     print("Prediction for sample review:", predict_review(sample_review, model_path, vec_path))

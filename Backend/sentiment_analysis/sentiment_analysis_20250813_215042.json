@@ -1,0 +1,18 @@
+{
+  "overall": {
+    "label": "positive",
+    "score": 0.5832107782363891,
+    "confidence": 0.41657912731170654
+  },
+  "review": {
+    "label": "positive",
+    "score": 0.8331582546234131,
+    "confidence": 0.8331582546234131
+  },
+  "comments": {
+    "individual": [],
+    "average_score": 0.0,
+    "count": 0
+  },
+  "timestamp": "2025-08-13T21:50:42.689748"
+}
