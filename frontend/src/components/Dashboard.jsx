@@ -33,18 +33,20 @@ const Dashboard = () => {
         Phone3,
         Laptop
       ],
-      likes: "5K",
+      upvotes: "5K",
+      downvotes: "2K",
       rating: 4.2,
-      reviews: "99.9K",
+      comments: "99.9K",
     },
     {
       id: 3,
       author: "A Walker",
       text: "I finally bought the Audi RS7, and honestly, it feels like one of the biggest achievements of my life. From the moment I stepped into the cockpit, I knew this wasn't just another car.",
       images: [Audi],
-      likes: "5K",
+      upvotes: "5K",
+      downvotes: "2K",
       rating: 4.2,
-      reviews: "99.9K",
+      comments: "99.9K",
     },
 
   ];
@@ -61,5 +63,6 @@ const Dashboard = () => {
     </div>
   );
 };
+
 
 export default Dashboard;

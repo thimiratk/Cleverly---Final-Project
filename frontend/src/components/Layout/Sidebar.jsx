@@ -5,7 +5,7 @@ import profileImage from "../../assets/profile.png"; // Update the filename to m
 
 const Sidebar = () => {
   return (
-    <div className="bg-gradient-to-b from-cyan-100 to-cyan-200 mt-16 rounded-2xl p-4 h-fit">
+    <div className="bg-gradient-to-b from-cyan-100 to-cyan-200 mt-16 rounded-2xl p-4 min-h-screen h-fit">
       {/* Profile Section */}
       <div className="flex flex-col items-center mb-6">
         <div className="w-16 h-16 rounded-full bg-gray-300 mb-3 overflow-hidden">
@@ -34,8 +34,6 @@ const Sidebar = () => {
           </div>
         </div>
       </div>
-
-
 
         <div className="flex items-center gap-3 text-gray-700 hover:text-blue-600 cursor-pointer transition-colors mb-4">
           <Settings className="w-4 h-4" />

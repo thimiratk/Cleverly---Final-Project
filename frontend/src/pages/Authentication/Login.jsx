@@ -3,6 +3,7 @@ import { Eye, EyeOff } from "lucide-react";
 import Img from '../../assets/login.png';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from "react-hot-toast";
+import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa"; 
 
 export default function Login() {
   const navigate = useNavigate();
@@ -86,10 +87,10 @@ export default function Login() {
                 id="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="w-full px-2 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-transparent"
                 placeholder="anna@gmail.com"
                 autoComplete="email"
-              />
+             />
             </div>
 
             {/* Password Field */}
@@ -103,7 +104,7 @@ export default function Login() {
                   id="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-yellow-200 focus:border-transparent"
                   placeholder="Password"
                   autoComplete="current-password"
                 />
@@ -170,11 +171,11 @@ export default function Login() {
           {/* Social Login Buttons */}
           <div className="flex justify-center space-x-4 mb-6">
             <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-              <span className="text-sm font-bold">f</span>
+            <FaGoogle className="w-6 h-6" />
             </button>
-            <button className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center text-white hover:bg-blue-600 transition-colors">
-              <span className="text-sm font-bold">in</span>
-            </button>
+            <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+            <FaFacebook className="w-6 h-6" />
+           </button>
           </div>
         </div>
       </div>

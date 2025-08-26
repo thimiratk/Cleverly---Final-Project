@@ -94,9 +94,9 @@ const CleverlySignUp = () => {
           {/* Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
              <input
-              type="username"
-              name="username"
-              placeholder="username"
+              type="Username"
+              name="Username"
+              placeholder="Username"
               value={formData.username}
               onChange={handleInputChange}
               className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"

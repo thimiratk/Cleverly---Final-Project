@@ -23,9 +23,11 @@ function App() {
         {/* These components will be rendered inside the <Outlet /> in AppLayout */}
         <Route index element={<Home />} />
       </Route>
+<Route path="/" element={<AppLayout />}>
+  <Route index element={<Home />} />
+  <Route path="trendings" element={<Trendings />} />
+</Route>
 
-      {/* Trendings page without AppLayout */}
-      <Route path="/trendings" element={<Trendings />} />
     </Routes>
   );
 }
