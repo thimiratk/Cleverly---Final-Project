@@ -1,32 +1,36 @@
-// App.jsx
-import './App.css';
-import { Routes, Route } from 'react-router-dom';
+import './App.css'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AppLayout from './pages/HomePage/AppLayout';
-import Home from './pages/HomePage/Home';
-import Login from './pages/Authentication/Login';
-import SignUp from './pages/Authentication/SignUp';
-import ForgotPassword from './pages/Authentication/ForgotPassword';
+import Login from './pages/Authentication/Login'
+import SignUp from './pages/Authentication/SignUp'
+import Header from './components/Layout/Header'
+import Sidebar from './components/Layout/Sidebar'
 import UserProfile from './pages/UserProfile/UserProfile';
-import Trendings from "./pages/Authentication/Trendings";
+import ModeratorDashboard from './components/Layout/ModeratorDashboard'
+import NotFound from './pages/NotFound/NotFound'
+import ImageUpload from './components/ImageUpload/ImageUpload'
+import Setting from './pages/Setting/Setting'
+import Trendings from './pages/Authentication/Trendings'
+import Home from "./pages/HomePage/Home";
+
 
 function App() {
-  return (  
-    <Routes>
-      {/* Public Routes (No layout) */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignUp />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="userprofile" element={<UserProfile />} />
-
-      {/* Main Application Routes (with AppLayout) */}
-      <Route path="/" element={<AppLayout />}>
-        {/* These components will be rendered inside the <Outlet /> in AppLayout */}
-        <Route index element={<Home />} />
-      </Route>
-
-      {/* Trendings page without AppLayout */}
-      <Route path="/trendings" element={<Trendings />} />
-    </Routes>
+  return (
+      <Routes>
+      
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<SignUp />} />  
+        <Route path="/header" element={<Header/>} />
+        <Route path="/sidebar" element={<Sidebar/>} />
+        <Route path="/userprofile" element={<UserProfile/>} />
+        <Route path="/" element={<AppLayout />}>
+        <Route  index element={<Home />} /> </Route>
+        <Route path='/moderator' element={<ModeratorDashboard />} />
+        <Route path='/notfound' element={<NotFound />} />
+        <Route path='/imageUpload' element={<ImageUpload />} />
+        <Route path='/settings' element={<Setting />} />
+        <Route path='/trendings' element={<Trendings />} />
+      </Routes>
   );
 }
 

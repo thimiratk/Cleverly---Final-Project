@@ -1,9 +1,10 @@
 import Header from '../../components/Layout/Header'
 import React, { useState } from 'react'
-import { Edit3, Grid3X3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, GraduationCap, Briefcase, Camera } from 'lucide-react'
-import image1 from '../../assets/posts/phone1.jpg'
-import image2 from '../../assets/posts/phone2.png'
-import Audi from '../../assets/posts/audi.png'
+import { Edit3, Heart, Eye, Save, X, Plus, MessageSquare, Badge, MapPin, Briefcase, Camera } from 'lucide-react'
+import image1 from '../../assets/Audi.png'
+import image2 from '../../assets/image2.png'
+import Audi2 from '../../assets/Audi2.png'
+import ImageUpload from '../../components/ImageUpload/ImageUpload'
 
 const UserProfile = () => {
   const [isEditingName, setIsEditingName] = useState(false)
@@ -22,6 +23,39 @@ const UserProfile = () => {
   })
   const [isEditingDetails, setIsEditingDetails] = useState(false)
   const [tempDetails, setTempDetails] = useState(userDetails)
+
+  //Add profile image state
+  const [profileImage, setProfileImage] = useState("https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format")
+  
+  //
+const [extraFeatures, setExtraFeatures] = useState({
+  socialLinks: { linkedin: '', twitter: '', github: '', instagram: '' },
+  achievements: [],
+  skills: [],
+  interests: []
+});
+
+const [newItem, setNewItem] = useState({ achievement: '', skill: '', interest: '' });
+
+// 
+const handleSocialLinkChange = (platform, value) => {
+  setExtraFeatures(prev => ({
+    ...prev,
+    socialLinks: { ...prev.socialLinks, [platform]: value }
+  }));
+};
+
+const handleAddItem = (type) => {
+  if (newItem[type].trim()) {
+    setExtraFeatures(prev => ({
+      ...prev,
+      [type + 's']: [...prev[type + 's'], newItem[type]]
+    }));
+    setNewItem(prev => ({ ...prev, [type]: '' }));
+  }
+};
+
+
   
   const [activities, setActivities] = useState([
     {
@@ -33,7 +67,7 @@ const UserProfile = () => {
       views: 156,
       isLiked: false,
       category: "Beauty & Personal Care",
-      images: [image1, Audi] // multiple images
+      images: [image1, Audi2] // multiple images
     },
     {
       id: 2,
@@ -121,6 +155,12 @@ const UserProfile = () => {
     setIsEditingDetails(false)
   }
 
+    // Add profile image change handler
+  const handleProfileImageChange = (newImageUrl) => {
+    setProfileImage(newImageUrl)
+    console.log('Profile image updated:', newImageUrl)
+  }
+
   const toggleLike = (activityId) => {
     setActivities(activities.map(activity => {
       if (activity.id === activityId) {
@@ -137,11 +177,7 @@ const UserProfile = () => {
   const handleComment = (activityId) => {
     console.log("Comment on activity:", activityId)
   }
-
-  const handleProfilePictureChange = () => {
-    alert("Profile picture change functionality would open file selector or camera options")
-  }
-  
+ 
   // Handle prev image in carousel
   const prevImage = (activityId) => {
     setImageIndexes(prev => {
@@ -162,27 +198,17 @@ const UserProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 mt-18">
+    <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="pt-16">
       
       {/* Profile Header Section */}
-      <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pt-0 ">
+      <div className="relative bg-gradient-to-r from-blue-400 to-blue-500 pb-30">
         <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2">
-          <div className="relative">
-            <img 
-              src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face&auto=format" 
-              alt={userName} 
-              className="w-32 h-32 rounded-full border-4 border-white object-cover cursor-pointer hover:opacity-90 transition-opacity"
-              onClick={handleProfilePictureChange}
-            />
-            <button 
-              onClick={handleProfilePictureChange}
-              className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center hover:bg-gray-50 shadow-lg transition-colors"
-            >
-              <Camera className="w-4 h-4 text-orange-500" />
-            </button>
-          </div>
+          <ImageUpload
+            currentImage={profileImage}
+            onImageChange={handleProfileImageChange}
+          />
         </div>
       </div>
 
@@ -229,7 +255,6 @@ const UserProfile = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">About</h2>
-                <Grid3X3 className="w-5 h-5 text-gray-400" />
               </div>
               
               {/* Bio Section */}
@@ -392,9 +417,6 @@ const UserProfile = () => {
                         🏆 Add Achievements
                       </button>
                       <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
-                        📊 Add Skills
-                      </button>
-                      <button className="w-full text-left p-2 hover:bg-white rounded text-sm text-gray-600">
                         🎯 Add Interests
                       </button>
                     </div>
@@ -408,7 +430,6 @@ const UserProfile = () => {
           <div className="lg:col-span-6 bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-800">Your Activities</h2>
-              <Grid3X3 className="w-5 h-5 text-gray-400" />
             </div>
             
             <div className="space-y-4">
@@ -492,7 +513,6 @@ const UserProfile = () => {
             <div className="bg-white rounded-lg shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-800">Performance</h2>
-                <Grid3X3 className="w-5 h-5 text-gray-400" />
               </div>
               
               <div className="space-y-6">
@@ -537,5 +557,4 @@ const UserProfile = () => {
     </div>
   )
 }
-
 export default UserProfile
