@@ -1,13 +1,16 @@
 import React from 'react';
 import { Palette, Sun, Moon } from 'lucide-react';
 
+// ThemeSelector component (properties are currentTheme, onThemeChange, themeClasses)
 const ThemeSelector = ({ currentTheme, onThemeChange, themeClasses }) => {
+   // Define theme options with name + icon
   const themes = {
     light: { name: 'Light', icon: Sun },
     dark: { name: 'Dark', icon: Moon }
   };
 
   return (
+    // Outer container with styling (rounded, padding, border, hover effects)
     <div className={`${themeClasses.section} rounded-2xl p-8 border transition-all duration-200 hover:shadow-lg`}>
       <div className="flex items-center mb-6">
         <Palette className={`w-6 h-6 ${themeClasses.text} mr-3`} />
@@ -29,7 +32,10 @@ const ThemeSelector = ({ currentTheme, onThemeChange, themeClasses }) => {
                 }
               `}
             >
+                  {/* Theme icon (Sun/Moon) */}
               <IconComponent className="w-8 h-8 mx-auto mb-3" />
+
+              {/* Theme name (Light / Dark) */}
               <div className="text-lg font-medium">{theme.name}</div>
             </button>
           );

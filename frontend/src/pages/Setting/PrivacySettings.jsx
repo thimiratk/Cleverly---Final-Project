@@ -3,13 +3,17 @@ import { Shield, Eye } from 'lucide-react';
 
 const PrivacySettings = ({ reviewVisibility, onReviewVisibilityChange, themeClasses }) => {
   return (
+    // Main container with styles (rounded box, border, hover effect)
     <div className={`${themeClasses.section} rounded-2xl p-8 border transition-all duration-200 hover:shadow-lg`}>
+      {/* Header Section with Icon + Title */}
       <div className="flex items-center mb-6">
         <Shield className={`w-6 h-6 ${themeClasses.text} mr-3`} />
         <h2 className={`text-2xl font-semibold ${themeClasses.text}`}>Privacy & Security</h2>
       </div>
       
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 bg-white/50 rounded-xl">
+      {/* Review visibility setting block */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-6 bg-white/50 rounded-xl">  
+        {/* Left side: Icon + Title + Description */}
         <div className="flex items-center space-x-4">
           <Eye className="w-5 h-5 text-blue-600" />
           <div>
@@ -17,9 +21,11 @@ const PrivacySettings = ({ reviewVisibility, onReviewVisibilityChange, themeClas
             <p className={`text-sm ${themeClasses.subtext}`}>Control who can see your reviews</p>
           </div>
         </div>
+
+        {/* Right side: Dropdown to select visibility */}
         <select
-          value={reviewVisibility}
-          onChange={(e) => onReviewVisibilityChange(e.target.value)}
+          value={reviewVisibility}           //current value
+          onChange={(e) => onReviewVisibilityChange(e.target.value)}  //update value when changed
           className={`
             px-4 py-3 ${themeClasses.input} rounded-l border focus:outline-none focus:ring-2 focus:ring-blue-500
             focus:border-transparent transition-all duration-200 min-w-[160px]

@@ -12,7 +12,7 @@ const Setting = () => {
   const [reviewVisibility, setReviewVisibility] = useState('public');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Apply theme to document
+  // Apply theme to cards
   useEffect(() => {
     const themes = {
       light: { classes: 'bg-gradient-to-br blue-50  text-gray-900' },

@@ -12,6 +12,7 @@ import ImageUpload from './components/ImageUpload/ImageUpload'
 import Setting from './pages/Setting/Setting'
 import Trendings from './pages/Authentication/Trendings'
 import Home from "./pages/HomePage/Home";
+import FollowersList from './pages/Followers/FollowersList';
 
 
 function App() {
@@ -30,6 +31,8 @@ function App() {
         <Route path='/imageUpload' element={<ImageUpload />} />
         <Route path='/settings' element={<Setting />} />
         <Route path='/trendings' element={<Trendings />} />
+        <Route path='/followers' element={<FollowersList />} />
+        
       </Routes>
   );
 }
