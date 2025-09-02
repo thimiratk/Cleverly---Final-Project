@@ -1,14 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect } from 'react';
 import { Home, Bell, Search, User, X, Users, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
+  // State to control mobile menu visibility (added for responsive mobile menu)
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
 
   const navigate = useNavigate();
+
+  // Effect to disable body scrolling when mobile menu is open (added for mobile UX)
+  useEffect(() => {
+    if (showMobileMenu) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [showMobileMenu]);
 
   // Dummy notifications data
   const notifications = [
@@ -32,6 +46,7 @@ const Header = () => {
     setShowNotifications(false);
     setShowUserMenu(false);
     setShowSearchResults(false);
+    setShowMobileMenu(false); // close mobile menu on navigation
   };
 
   const handleSearch = (e) => {
@@ -47,19 +62,20 @@ const Header = () => {
   };
 
   return (
-    <div className="relative">
+    <div className="fixed top-0 left-0 w-full z-50 bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-4">
       {/* FIXED HEADER: Added fixed positioning classes to keep header at top during scroll */}
-      <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-4 flex items-center justify-between">
+      <div className="container mx-auto flex justify-between items-center">
         
-        {/* Logo / Title */}
+        {/* Logo clickable */}
         <div 
           className="text-white font-bold text-xl cursor-pointer hover:text-blue-200 transition-colors"
           onClick={() => handleNavigation('/')}
         >
           CLEVERLY
         </div>
-        
-        <div className="flex items-center space-x-6">
+
+         {/* Desktop navigation and icons (hidden on mobile) */}
+        <div className="hidden md:flex items-center space-x-6">
           
           {/* Home Icon */}
           <Home 
@@ -106,7 +122,7 @@ const Header = () => {
                 </button>
                 <hr className="my-1" />
                 <button
-                  onClick={() => handleNavigation('/logout')}
+                  onClick={() => handleNavigation('/login')}
                   className="w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100 transition-colors"
                 >
                   Logout
@@ -159,7 +175,7 @@ const Header = () => {
               </div>
             )}
           </div>
-          
+    
           {/* Search Bar */}
           <div className="relative">
             <Search className="w-5 h-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2 z-10" />
@@ -170,7 +186,7 @@ const Header = () => {
               onChange={handleSearchInputChange}
               onFocus={() => searchQuery.length > 0 && setShowSearchResults(true)}
               onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-              className="bg-white rounded-full px-10 py-2 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 relative"
+              className="bg-white rounded-full pl-10 pr-10 py-2 w-64 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300 relative"
             />
             {searchQuery && (
               <X 
@@ -183,8 +199,8 @@ const Header = () => {
             )}
             {/* DROPDOWN Z-INDEX: Increased z-index to ensure dropdown appears above fixed header */}
             {showSearchResults && searchQuery && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-[60] max-h-64 overflow-y-auto">
-                <div className="px-4 py-2 border-b border-gray-200">
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg py-2 z-50 max-h-64 overflow-y-auto">
+                <div className="px-4 py-2 border-b border-gray-200 ">
                   <h3 className="font-semibold text-gray-800 text-sm">Search Results</h3>
                 </div>
                 {searchResults
@@ -213,7 +229,7 @@ const Header = () => {
             )}
           </div>
         </div>
-      </div>
+      
 
       {/* OVERLAY TO CLOSE DROPDOWNS: Fixed overlay that covers entire screen when dropdowns are open */}
       {(showNotifications || showUserMenu || showSearchResults) && (
@@ -226,6 +242,36 @@ const Header = () => {
           }}
         />
       )}
+    {/* Mobile menu hamburger icon (visible only on mobile) */}
+        <div className="md:hidden">
+          <button onClick={() => setShowMobileMenu(true)} title="Open Menu" aria-label="Open Menu">
+            {/* Hamburger SVG icon */}
+            <svg className="w-7 h-7 text-white cursor-pointer" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
+        </div>
+      </div>
+     
+
+      {/* Mobile menu drawer slides in from right */}
+      <div className={`md:hidden fixed top-0 right-0 bottom-0 w-72 bg-white shadow-lg transform transition-transform z-50 ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}>
+        <div className="flex justify-end p-6">
+          <button onClick={() => setShowMobileMenu(false)} title="Close Menu" aria-label="Close Menu">
+            <X className="w-6 h-6 text-gray-700 cursor-pointer" />
+          </button>
+        </div>
+        {/* Mobile nav links */}
+        <nav className="flex flex-col items-start px-6 space-y-4 text-gray-800 font-medium cursor-pointer">
+          {/* Each closes menu and navigates */}
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/'); }}className="hover:text-blue-600">Home</a>
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/trendings'); }} className="hover:text-blue-600">Trending</a>
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/followers'); }} className="hover:text-blue-600">Followers</a>
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/userprofile'); }} className="hover:text-blue-600">My Profile</a>
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/settings'); }} className="hover:text-blue-600">Settings</a>
+          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/login'); }} className="text-red-600 hover:text-red-800">Logout</a>
+        </nav>
+      </div>
     </div>
   );
 };
