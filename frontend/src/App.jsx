@@ -13,6 +13,7 @@ import Setting from './pages/Setting/Setting'
 import Trendings from './pages/Authentication/Trendings'
 import Home from "./pages/HomePage/Home";
 import FollowersList from './pages/Followers/FollowersList';
+import FollowerProfile from './pages/Followers/FollowerProfile';
 
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
         <Route path='/settings' element={<Setting />} />
         <Route path='/trendings' element={<Trendings />} />
         <Route path='/followers' element={<FollowersList />} />
+        <Route path="/follower/:id" element={<FollowerProfile />} />
         
       </Routes>
   );
