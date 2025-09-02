@@ -1,6 +1,7 @@
 import React, { useState ,useEffect } from 'react';
 import { Home, Bell, Search, User, X, Users, Flame } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import MobileMenu from './MobileMenu';
 
 const Header = () => {
   // State to control mobile menu visibility (added for responsive mobile menu)
@@ -70,11 +71,11 @@ const Header = () => {
         <div 
           className="text-white font-bold text-xl cursor-pointer hover:text-blue-200 transition-colors"
           onClick={() => handleNavigation('/')}
-        >
-          CLEVERLY
+        > CLEVERLY
         </div>
 
-         {/* Desktop navigation and icons (hidden on mobile) */}
+    {/* Desktop navigation and icons (hidden on mobile) */}
+
         <div className="hidden md:flex items-center space-x-6">
           
           {/* Home Icon */}
@@ -242,35 +243,9 @@ const Header = () => {
           }}
         />
       )}
-    {/* Mobile menu hamburger icon (visible only on mobile) */}
-        <div className="md:hidden">
-          <button onClick={() => setShowMobileMenu(true)} title="Open Menu" aria-label="Open Menu">
-            {/* Hamburger SVG icon */}
-            <svg className="w-7 h-7 text-white cursor-pointer" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-        </div>
-      </div>
-     
-
-      {/* Mobile menu drawer slides in from right */}
-      <div className={`md:hidden fixed top-0 right-0 bottom-0 w-72 bg-white shadow-lg transform transition-transform z-50 ${showMobileMenu ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="flex justify-end p-6">
-          <button onClick={() => setShowMobileMenu(false)} title="Close Menu" aria-label="Close Menu">
-            <X className="w-6 h-6 text-gray-700 cursor-pointer" />
-          </button>
-        </div>
-        {/* Mobile nav links */}
-        <nav className="flex flex-col items-start px-6 space-y-4 text-gray-800 font-medium cursor-pointer">
-          {/* Each closes menu and navigates */}
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/'); }}className="hover:text-blue-600">Home</a>
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/trendings'); }} className="hover:text-blue-600">Trending</a>
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/followers'); }} className="hover:text-blue-600">Followers</a>
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/userprofile'); }} className="hover:text-blue-600">My Profile</a>
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/settings'); }} className="hover:text-blue-600">Settings</a>
-          <a onClick={() => { setShowMobileMenu(false); handleNavigation('/login'); }} className="text-red-600 hover:text-red-800">Logout</a>
-        </nav>
+      
+   {/* MobileMenu component */}
+      <MobileMenu showMobileMenu={showMobileMenu} setShowMobileMenu={setShowMobileMenu} handleNavigation={handleNavigation} />
       </div>
     </div>
   );
