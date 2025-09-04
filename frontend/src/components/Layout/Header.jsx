@@ -243,7 +243,6 @@ const Header = () => {
           }}
         />
       )}
-      
    {/* MobileMenu component */}
       <MobileMenu showMobileMenu={showMobileMenu} setShowMobileMenu={setShowMobileMenu} handleNavigation={handleNavigation} />
       </div>

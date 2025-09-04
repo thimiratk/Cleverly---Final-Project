@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 const MobileMenu = ({ showMobileMenu, setShowMobileMenu, handleNavigation }) => {
   return (
     <>
-      {/* Hamburger button visible only on mobile */}
+      {/* Burger button visible only on mobile */}
       <div className="md:hidden">
         <button onClick={() => setShowMobileMenu(true)} title="Open Menu" aria-label="Open Menu">
           <svg className="w-7 h-7 text-white cursor-pointer" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -27,7 +27,7 @@ const MobileMenu = ({ showMobileMenu, setShowMobileMenu, handleNavigation }) => 
             <a onClick={() => { setShowMobileMenu(false); handleNavigation('/followers'); }} className="hover:text-blue-600">Followers</a>
             <a onClick={() => { setShowMobileMenu(false); handleNavigation('/userprofile'); }} className="hover:text-blue-600">My Profile</a>
             <a onClick={() => { setShowMobileMenu(false); handleNavigation('/settings'); }} className="hover:text-blue-600">Settings</a>
-            <a onClick={() => { setShowMobileMenu(false); handleNavigation('/login'); }} className="text-red-600 hover:text-red-800">Logout</a>
+            <a onClick={() => { setShowMobileMenu(false); ;handleNavigation('/login'); }} className="text-red-600 hover:text-red-800">Logout</a>
           </nav>
         </div>
       )}

@@ -1,4 +1,6 @@
 import './App.css'
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import AppLayout from './pages/HomePage/AppLayout';
 import Login from './pages/Authentication/Login'
@@ -15,11 +17,12 @@ import Home from "./pages/HomePage/Home";
 import FollowersList from './pages/Followers/FollowersList';
 import FollowerProfile from './pages/Followers/FollowerProfile';
 
-
 function App() {
+ 
   return (
+    <>
       <Routes>
-      
+    
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<SignUp />} />  
         <Route path="/header" element={<Header/>} />
@@ -36,6 +39,8 @@ function App() {
         <Route path="/follower/:id" element={<FollowerProfile />} />
         
       </Routes>
+      <ToastContainer/>
+      </>
   );
 }
 
