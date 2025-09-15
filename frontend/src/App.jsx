@@ -1,42 +1,29 @@
-import './App.css'
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import AppLayout from './pages/HomePage/AppLayout';
-import Login from './pages/Authentication/Login'
-import SignUp from './pages/Authentication/SignUp'
-import Header from './components/Layout/Header'
-import Sidebar from './components/Layout/Sidebar'
-import UserProfile from './pages/UserProfile/UserProfile';
-import ModeratorDashboard from './components/Layout/ModeratorDashboard'
-import NotFound from './pages/NotFound/NotFound'
-import ImageUpload from './components/ImageUpload/ImageUpload'
-import Setting from './pages/Setting/Setting'
-import Trendings from './pages/Authentication/Trendings'
-import Home from "./pages/HomePage/Home";
-import FollowersList from './pages/Followers/FollowersList';
-import FollowerProfile from './pages/Followers/FollowerProfile';
+import { Toaster } from "react-hot-toast";
+import Navbar from "./components/Navbar";
+import Home from "./pages/Home";
+import Register from "./pages/Register";
+import Login from "./pages/Login";
+import Reviews from "./pages/Reviews";
+import { AuthProvider } from "./context/AuthContext";
+import ProfilePage from "./pages/Profile";
+import CreateReview from "./pages/WriteReview";
 
-
-function App() {
+export default function App() {
   return (
-      <Routes>
-      
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<SignUp />} />  
-        <Route path="/header" element={<Header/>} />
-        <Route path="/sidebar" element={<Sidebar/>} />
-        <Route path="/userprofile" element={<UserProfile/>} />
-        <Route path="/" element={<AppLayout />}>
-        <Route  index element={<Home />} /> </Route>
-        <Route path='/moderator' element={<ModeratorDashboard />} />
-        <Route path='/notfound' element={<NotFound />} />
-        <Route path='/imageUpload' element={<ImageUpload />} />
-        <Route path='/settings' element={<Setting />} />
-        <Route path='/trendings' element={<Trendings />} />
-        <Route path='/followers' element={<FollowersList />} />
-        <Route path="/follower/:id" element={<FollowerProfile />} />
-        
-      </Routes>
+    <Router>
+      <AuthProvider>
+        <Toaster position="top-center" />
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/reviews" element={<Reviews />} />
+          <Route path="/profile" element={<ProfilePage/>} />
+          <Route path="/create-review" element={<CreateReview />} />
+        </Routes>
+      </AuthProvider>
+    </Router>
   );
 }
-
-export default App;

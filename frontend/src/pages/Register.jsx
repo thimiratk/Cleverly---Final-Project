@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Star, Check } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa"; // add at top
+import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa";
+import { useAuth } from '../context/AuthContext';
 
 
 
-const CleverlySignUp = () => {
+const Register = () => {
+  const navigate = useNavigate();
+  const { register } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -38,11 +43,14 @@ const CleverlySignUp = () => {
 
   // Validation helper
   const validateForm = () => {
+    if (!formData.name.trim()) {
+      toast.error("Name is required");
+      return false;
+    }
     if (!formData.email.trim()) {
       toast.error("Email is required");
       return false;
     }
-    // Simple email regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       toast.error("Please enter a valid email");
@@ -63,17 +71,29 @@ const CleverlySignUp = () => {
     return true;
   };
 
-  // Submit handler
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    // TODO: API call here
-    console.log("Form submitted:", formData);
-    toast.success("Sign up successful!");
-
-    // Optionally reset form
-    setFormData({ email: "", password: "", confirmPassword: "" });
+    setIsLoading(true);
+    try {
+      const result = await register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password
+      });
+      
+      if (!result.success) {
+        toast.error(result.message);
+      } else {
+        toast.success('Registration successful!');
+        navigate('/reviews'); // Navigate to reviews page after successful registration
+      }
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -94,13 +114,13 @@ const CleverlySignUp = () => {
           {/* Form */}
           <form className="space-y-4" onSubmit={handleSubmit}>
              <input
-              type="username"
-              name="username"
-              placeholder="username"
-              value={formData.username}
+              type="text"
+              name="name"
+              placeholder="Username"
+              value={formData.name}
               onChange={handleInputChange}
               className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              autoComplete="username"
+              autoComplete="name"
             />
             <input
               type="email"
@@ -134,9 +154,10 @@ const CleverlySignUp = () => {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign Up
+              {isLoading ? "Creating Account..." : "Sign Up"}
             </button>
           </form>
 
@@ -180,16 +201,16 @@ const CleverlySignUp = () => {
       </div>
 
       {/* Right Side - Social Media Interface */}
-      <div className="flex-1 bg-gradient-to-br from-pink-100 to-purple-100 p-8 relative overflow-hidden">
+      <div className="hidden lg:block flex-1 bg-gradient-to-br from-pink-100 to-purple-100 p-8 relative overflow-hidden">
         {/* Floating Social Cards */}
         <div className="relative h-full">
           {/* Main Profile Card */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-96 bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <div className="relative h-full">
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[400px] h-[500px] bg-white rounded-3xl shadow-2xl overflow-hidden">
+            <div className="relative h-full w-full">
               <img
                 src="https://images.unsplash.com/photo-1544717297-fa95b6ee9643?w=400&h=400&fit=crop&crop=face"
                 alt="Profile"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
 
@@ -252,4 +273,4 @@ const CleverlySignUp = () => {
   );
 };
 
-export default CleverlySignUp;
+export default Register;
