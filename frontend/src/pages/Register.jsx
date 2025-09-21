@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Heart, MessageCircle, Star, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa";
+// import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa";
 import { useAuth } from '../context/AuthContext';
-
+import GoogleButton from "../components/GoogleButtonSignup";
+updaa
 
 
 const Register = () => {
@@ -170,12 +171,13 @@ const Register = () => {
 
         {/* Social Login */}
           <div className="flex justify-center space-x-4 mb-6">
-            <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
+            <GoogleButton/>
+            {/* <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
             <FaGoogle className="w-6 h-6" />
             </button>
             <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
             <FaFacebook className="w-6 h-6" />
-           </button>
+           </button> */}
           </div>
 
 
