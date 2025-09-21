@@ -120,7 +120,7 @@ export const userVerifyForgotpasswordOtp = async(req:Request,res:Response,next:N
     await VerifyForgotpasswordOtp(req,res,next);
 }
 
-export const resetUserPassword = async (req:Request,res:Response,next:NextFunction,userType:"user"|"seller") => {
+export const resetUserPassword = async (req:Request,res:Response,next:NextFunction) => {
     try {
         const { email, newPassword } = req.body;
         if (!email || !newPassword) {
