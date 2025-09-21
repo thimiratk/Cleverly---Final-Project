@@ -7,7 +7,7 @@ import express from 'express';
 import * as path from 'path';
 import cors from 'cors';
 import morgan from 'morgan';
-import ratelimit from 'express-rate-limit';
+import ratelimit, { ipKeyGenerator } from 'express-rate-limit';
 import swaggerUi from 'swagger-ui-express';
 import cookieParser from "cookie-parser";
 import { error } from 'console';
@@ -33,7 +33,11 @@ const limiter = ratelimit({
   message:{error:"Too many requests, please try again later"},
   standardHeaders: true,
   legacyHeaders: true,
-  keyGenerator:(req:any)=> req.ip,
+  // Use the provided ipKeyGenerator helper to correctly handle IPv6 addresses
+  keyGenerator: (req:any) => {
+    // ipKeyGenerator expects an IP string and optional ipv6Subnet, so pass req.ip
+    return ipKeyGenerator(req.ip as string);
+  },
 })
 
 app.use(limiter);
@@ -45,10 +49,26 @@ app.get('/gateway-health', (req, res) => {
   res.send({ message: 'Welcome to api-gateway!' });
 });
 
-app.use("/",proxy("http://localhost:6001"))
+// Proxy requests to the downstream service. Wrap proxy errors so they return 502
+app.use("/", proxy("http://localhost:6001", {
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
 
 const port = process.env.PORT || 8080;
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api`);
 });
 server.on('error', console.error);
+
+// Graceful error handlers for uncaught exceptions / rejections
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection at:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception thrown:', err);
+});
