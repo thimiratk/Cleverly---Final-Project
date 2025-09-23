@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, Star, MapPin, Eye } from 'lucide-react';
+import { ArrowLeft, Upload, Star, MapPin, Eye, Home } from 'lucide-react';
+
 
 const WriteReview = ({ currentUser = { name: 'Sarah Johnson', username: 'sarahj_reviews', avatar: null }, onCancel, onSubmit }) => {
   const [step, setStep] = useState(1);
@@ -39,6 +40,7 @@ const WriteReview = ({ currentUser = { name: 'Sarah Johnson', username: 'sarahj_
       <div>
         <label className="block text-sm font-medium mb-2">What are you reviewing?</label>
         <input
+          type="text"
           placeholder="Search for a product or service..."
           value={formData.productName}
           onChange={(e) => setFormData({ ...formData, productName: e.target.value })}
@@ -274,7 +276,18 @@ const WriteReview = ({ currentUser = { name: 'Sarah Johnson', username: 'sarahj_
   );
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-6">
+    
+     <div className="fixed inset-0 flex items-center justify-center z-50">
+      {/* Background Blur */}
+  
+      <div
+        className="absolute inset-0  bg-opacity-10 backdrop-blur-xs"
+        onClick={onCancel}
+      ></div>
+
+      {/* Focused Small Window */}
+      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-lg mx-4 p-6 z-10">
+       
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button onClick={onCancel} className="p-2 hover:bg-gray-100 rounded">
@@ -313,6 +326,7 @@ const WriteReview = ({ currentUser = { name: 'Sarah Johnson', username: 'sarahj_
       {step === 2 && <Step2 />}
       {step === 3 && <Step3 />}
       {step === 4 && <Step4 />}
+    </div>
     </div>
   );
 };
