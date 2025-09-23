@@ -1,46 +1,13 @@
 import React, { useState } from 'react';
 import { X, Camera, User, Mail, Lock, Briefcase, MapPin } from 'lucide-react';
+import { 
+  Button, 
+  Avatar, 
+  AvatarImage, 
+  AvatarFallback,
+  COMMON_STYLES
+} from '../components/ui/UIComponents';
 
-// Mock UI components
-const Button = ({ children, variant = 'default', size = 'default', className = '', onClick, ...props }) => {
-  const baseClasses = 'inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
-  const variants = {
-    default: 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500',
-    outline: 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500',
-    ghost: 'text-gray-600 hover:bg-gray-100 focus:ring-gray-500'
-  };
-  const sizes = {
-    sm: 'px-3 py-1.5 text-sm',
-    default: 'px-4 py-2 text-sm'
-  };
-  
-  return (
-    <button 
-      className={`${baseClasses} ${variants[variant]} ${sizes[size]} ${className}`}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Avatar = ({ children, className = '' }) => (
-  <div className={`relative inline-flex items-center justify-center overflow-hidden bg-gray-100 rounded-full ${className}`}>
-    {children}
-  </div>
-);
-
-const AvatarImage = ({ src, alt }) => (
-  src ? <img src={src} alt={alt} className="w-full h-full object-cover" /> : null
-);
-
-const AvatarFallback = ({ children, className = '' }) => (
-  <span className={`text-gray-500 ${className}`}>{children}</span>
-);
-
-// Profile Edit Modal Component
 const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [profileData, setProfileData] = useState({
@@ -96,8 +63,8 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-xl flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-hidden">
+    <div className={COMMON_STYLES.modalOverlay}>
+      <div className={COMMON_STYLES.modalContent}>
         {/* Modal Header */}
         <div className="bg-gradient-to-r from-blue-300 to-purple-300 text-white p-4">
           <div className="flex items-center justify-between">
@@ -106,7 +73,8 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
               onClick={onClose}
               variant="ghost"
               size="sm"
-             className="text-white hover:text-purple-500 hover:bg-white hover:bg-opacity-20 rounded-full p-2">
+              className="text-white hover:text-purple-500 hover:bg-white hover:bg-opacity-20 rounded-full p-2"
+            >
               <X size={25} />
             </Button>
           </div>
@@ -131,7 +99,9 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
               className={activeTab === 'account' 
                 ? 'bg-white text-blue-600' 
                 : 'text-blue-100 hover:text-black hover:bg-white hover:bg-opacity-20'
-              }>  Account Settings
+              }
+            >
+              Account Settings
             </Button>
           </div>
         </div>
@@ -144,11 +114,10 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
               <div className="flex flex-col items-center">
                 <div className="relative">
                   <Avatar className="w-22 h-22">
-                    {/* Show User icon only if no profile image */}
-      {!profileData.profileImage && (
-        <User size={40} className="absolute inset-0 m-auto text-gray-400" />
-      )}
-      <AvatarImage src={profileData.profileImage} alt="" />
+                    {!profileData.profileImage && (
+                      <User size={40} className="absolute inset-0 m-auto text-gray-400" />
+                    )}
+                    <AvatarImage src={profileData.profileImage} alt="" />
                   </Avatar>
                   <label htmlFor="profile-image" className="absolute -bottom-2 -right-2 bg-purple-400 text-white rounded-full p-2 cursor-pointer hover:bg-purple-600 transition-colors">
                     <Camera size={16} />
@@ -179,7 +148,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
                   <div className="relative">
-                    <Briefcase size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <Briefcase size={18} className={COMMON_STYLES.iconInInput} />
                     <input
                       type="text"
                       value={profileData.job}
@@ -193,7 +162,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                   <div className="relative">
-                    <MapPin size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                    <MapPin size={18} className={COMMON_STYLES.iconInInput} />
                     <input
                       type="text"
                       value={profileData.location}
@@ -215,7 +184,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                   className="w-full h-9 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none h-20"
                   placeholder="Tell us about yourself..."
                 />
-                <p className="text-sm text-gray-500 ">{profileData.bio.length}/200 characters</p>
+                <p className="text-sm text-gray-500">{profileData.bio.length}/200 characters</p>
               </div>
             </div>
           )}
@@ -225,7 +194,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
                 <div className="relative">
-                  <Mail size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <Mail size={18} className={COMMON_STYLES.iconInInput} />
                   <input
                     type="email"
                     value={accountData.email}
@@ -243,7 +212,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
                       <input
                         type="password"
                         value={accountData.currentPassword}
@@ -257,7 +226,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
                       <input
                         type="password"
                         value={accountData.newPassword}
@@ -271,7 +240,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave }) => {
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
                     <div className="relative">
-                      <Lock size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
                       <input
                         type="password"
                         value={accountData.confirmPassword}
