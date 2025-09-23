@@ -6,6 +6,7 @@ import { FaFacebook, FaGoogle } from "react-icons/fa";
 import loginImage from '../assets/login.png';
 import { useAuth } from '../context/AuthContext';
 import API from "../services/api";
+import GoogleButton from "../components/GoogleButtonSignin";
 
 
 export default function Login() {
@@ -184,7 +185,8 @@ export default function Login() {
 
           {/* Social Login */}
           <div className="flex justify-center space-x-4">
-            <button 
+            <GoogleButton/>
+            {/* <button 
               type="button"
               className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md"
             >
@@ -195,7 +197,7 @@ export default function Login() {
               className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center text-white hover:from-blue-600 hover:to-blue-700 transition-all duration-200 transform hover:scale-105 shadow-md"
             >
               <FaFacebook className="w-5 h-5" />
-            </button>
+            </button> */}
           </div>
         </div>
       </div>
