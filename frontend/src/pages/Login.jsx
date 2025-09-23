@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate  } from 'react-router-dom';
 import { toast } from "react-hot-toast";
-import { FaFacebook, FaGoogle } from "react-icons/fa";
+
 import loginImage from '../assets/login.png';
 import { useAuth } from '../context/AuthContext';
 import API from "../services/api";
@@ -77,7 +77,7 @@ export default function Login() {
       localStorage.setItem("token", response.data.token);
       localStorage.setItem("user", JSON.stringify(response.data.user));
       toast.success("Login successful!");
-      navigate('/reviews');
+      navigate('/');
     } catch (error) {
       console.error("Login error:", error);
       toast.error(error.response?.data?.message || "Login failed. Please check your credentials.");
