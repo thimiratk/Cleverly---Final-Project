@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "animated-space-umbrella-g4x9q94q5gv53p47-6001.app.github.dev",
 });
 
 // Add token automatically if available

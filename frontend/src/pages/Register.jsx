@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Heart, MessageCircle, Star, Check } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-// import { FaFacebook, FaGoogle, FaLinkedinIn } from "react-icons/fa";
 import { useAuth } from '../context/AuthContext';
 import GoogleButton from "../components/GoogleButtonSignup";
-updaa
-
 
 const Register = () => {
   const navigate = useNavigate();
   const { register } = useAuth();
+  const [showOtp, setShowOtp] = useState(false);
+  const [serverError, setServerError] = useState(null);
+  const [canResend, setCanResend] = useState(true);
+  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
+  const [timer, setTimer] = useState(60);
+  const inputRefs = useRef([]);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -34,12 +37,50 @@ const Register = () => {
     return () => clearInterval(interval);
   }, [reactions.length]);
 
+  // Timer for OTP resend
+  useEffect(() => {
+    if (showOtp && !canResend) {
+      const interval = setInterval(() => {
+        setTimer((prev) => {
+          if (prev <= 1) {
+            setCanResend(true);
+            return 60;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [showOtp, canResend]);
+
   // Handle input change
   const handleInputChange = (e) => {
     setFormData((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
+  };
+
+  // Handle OTP change
+  const handleOtpChange = (e, index) => {
+    const value = e.target.value;
+    if (isNaN(value)) return;
+
+    const newOtp = [...otp];
+    newOtp[index] = value;
+    setOtp(newOtp);
+
+    // Move to next input
+    if (value !== "" && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  // Handle OTP backspace
+  const handleOtpKeyDown = (e, index) => {
+    if (e.key === "Backspace" && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
   };
 
   // Validation helper
@@ -87,8 +128,9 @@ const Register = () => {
       if (!result.success) {
         toast.error(result.message);
       } else {
-        toast.success('Registration successful!');
-        navigate('/reviews'); // Navigate to reviews page after successful registration
+        toast.success('OTP sent to your email!');
+        setShowOtp(true); // Show OTP form
+        setCanResend(false); // Start timer
       }
     } catch (error) {
       toast.error(error.message);
@@ -97,9 +139,45 @@ const Register = () => {
     }
   };
 
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    const otpString = otp.join("");
+    
+    if (otpString.length !== 6) {
+      toast.error("Please enter complete OTP");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Add your OTP verification API call here
+      // const result = await verifyOtp(formData.email, otpString);
+      
+      toast.success('Registration successful!');
+      navigate('/login'); // Navigate to login after successful verification
+    } catch (error) {
+      toast.error(error.message || "Invalid OTP");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (!canResend) return;
+    
+    try {
+      // Add your resend OTP API call here
+      toast.success('OTP resent successfully!');
+      setCanResend(false);
+      setTimer(60);
+    } catch (error) {
+      toast.error('Failed to resend OTP');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex">
-      {/* Left Side - Sign Up Form */}
+      {/* Left Side - Form */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
           {/* Logo */}
@@ -112,93 +190,154 @@ const Register = () => {
             </h1>
           </div>
 
-          {/* Form */}
-          <form className="space-y-4" onSubmit={handleSubmit}>
-             <input
-              type="text"
-              name="name"
-              placeholder="Username"
-              value={formData.name}
-              onChange={handleInputChange}
-              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              autoComplete="name"
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="E-mail"
-              value={formData.email}
-              onChange={handleInputChange}
-              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              autoComplete="email"
-            />
+          {!showOtp ? (
+            /* Registration Form */
+            <div>
+              <form className="space-y-4" onSubmit={handleSubmit}>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Username"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                  autoComplete="name"
+                />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="E-mail"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                  autoComplete="email"
+                />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                  autoComplete="new-password"
+                />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Confirm Password"
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange}
+                  className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                  autoComplete="new-password"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Creating Account..." : "Sign Up"}
+                </button>
+              </form>
 
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleInputChange}
-              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              autoComplete="new-password"
-            />
+              {/* Divider */}
+              <div className="flex items-center my-6">
+                <div className="flex-1 border-t border-gray-200"></div>
+                <span className="px-4 text-gray-500 text-sm">OR</span>
+                <div className="flex-1 border-t border-gray-200"></div>
+              </div>
 
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleInputChange}
-              className="w-full px-6 py-4 bg-blue-100/60 border-0 rounded-full text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
-              autoComplete="new-password"
-            />
+              {/* Social Login */}
+              <div className="flex justify-center space-x-4 mb-6">
+                <GoogleButton/>
+              </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Creating Account..." : "Sign Up"}
-            </button>
-          </form>
-
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-4 text-gray-500 text-sm">OR</span>
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
-
-        {/* Social Login */}
-          <div className="flex justify-center space-x-4 mb-6">
-            <GoogleButton/>
-            {/* <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-            <FaGoogle className="w-6 h-6" />
-            </button>
-            <button className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white hover:bg-blue-700 transition-colors">
-            <FaFacebook className="w-6 h-6" />
-           </button> */}
-          </div>
-
-
-          {/* Footer Links */}
-          <div className="text-center space-y-2">
-            <Link
-              to="/forgot-password"
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-            >
-              Forgot password?
-            </Link>
-            <div className="text-sm text-gray-600">
-              Have an account?{" "}
-              <Link
-                to="/login"
-                className="text-blue-600 hover:text-blue-700 font-medium"
-              >
-                Login
-              </Link>
+              {/* Footer Links */}
+              <div className="text-center space-y-2">
+                <Link
+                  to="/forgot-password"
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  Forgot password?
+                </Link>
+                <div className="text-sm text-gray-600">
+                  Have an account?{" "}
+                  <Link
+                    to="/login"
+                    className="text-blue-600 hover:text-blue-700 font-medium"
+                  >
+                    Login
+                  </Link>
+                </div>
+              </div>
             </div>
-          </div>
+          ) : (
+            /* OTP Form */
+            <div>
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">Verify Your Email</h2>
+                <p className="text-gray-600 text-sm">
+                  We sent a 6-digit code to <br/>
+                  <span className="font-medium">{formData.email}</span>
+                </p>
+              </div>
+
+              <form onSubmit={handleOtpSubmit} className="space-y-6">
+                <div className="flex justify-center space-x-2">
+                  {otp.map((digit, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(e, index)}
+                      onKeyDown={(e) => handleOtpKeyDown(e, index)}
+                      ref={(el) => inputRefs.current[index] = el}
+                      className="w-12 h-12 text-center text-xl font-bold border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:outline-none transition-colors"
+                      autoComplete="off"
+                    />
+                  ))}
+                </div>
+
+                {serverError && (
+                  <div className="text-red-500 text-sm text-center">{serverError}</div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-semibold py-4 px-8 rounded-full hover:from-blue-600 hover:to-cyan-600 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Verifying..." : "Verify OTP"}
+                </button>
+              </form>
+
+              <div className="text-center mt-6">
+                <p className="text-sm text-gray-600 mb-2">
+                  Didn't receive the code?
+                </p>
+                <button
+                  onClick={handleResendOtp}
+                  disabled={!canResend}
+                  className={`text-sm font-medium ${
+                    canResend 
+                      ? "text-blue-600 hover:text-blue-700 cursor-pointer" 
+                      : "text-gray-400 cursor-not-allowed"
+                  }`}
+                >
+                  {canResend ? "Resend OTP" : `Resend in ${timer}s`}
+                </button>
+              </div>
+
+              <div className="text-center mt-4">
+                <button
+                  onClick={() => setShowOtp(false)}
+                  className="text-sm text-gray-500 hover:text-gray-700"
+                >
+                  ← Back to registration
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
