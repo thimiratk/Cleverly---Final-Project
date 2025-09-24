@@ -1,7 +1,7 @@
 // src/services/auth.service.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/auth'; // adjust if deployed
+const API_URL = 'animated-space-umbrella-g4x9q94q5gv53p47-8080.app.github.dev'; // adjust if deployed
 
 // Register a new user
 export const registerUser = async (userData) => {
