@@ -10,6 +10,7 @@ import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import { AuthProvider } from "./context/AuthContext";
+import CreateReview from "./pages/WriteReview";
 
 function AppContent() {
   const location = useLocation();
@@ -27,7 +28,11 @@ function AppContent() {
         <Route path="/trendings" element={<Trendings />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/profile" element={<Profile />} />
+
         
+
+        <Route path="/create-review" element={<CreateReview />} />
+
       </Routes>
     </>
   );

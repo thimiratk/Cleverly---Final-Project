@@ -80,7 +80,7 @@ export default function Navbar() {
             </Link>
             {/* Create Review Button */}
             <Link
-              to="/reviews/create"
+              to="/create-review"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />

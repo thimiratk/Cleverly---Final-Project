@@ -1,134 +1,11 @@
 import React, { useState } from "react";
-import {
-  MapPin,
-  Calendar,
-  Link,
-  Settings,
-  MoreHorizontal,
-  Star,
-  Trophy,
-} from "lucide-react";
+import { MapPin, Calendar, Link, Settings, Star, Trophy } from "lucide-react";
+import { Button, Badge, Card, CardContent, Avatar, AvatarImage, AvatarFallback, Progress,Tabs,TabsList,TabsTrigger,TabsContent,formatNumber,COMMON_STYLES
+} from "../components/ui/UIComponents";
 import ProfileEditModal from "./ProfileEditModal";
 
-// 🔹 Reusable UI components
-const Button = ({
-  children,
-  variant = "default",
-  size = "default",
-  className = "",
-  onClick,
-  ...props
-}) => {
-  const base =
-    "inline-flex items-center justify-center rounded-md font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none";
-  const variants = {
-    default:
-      "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-    secondary:
-      "bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500",
-    outline:
-      "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500",
-    ghost: "text-gray-600 hover:bg-gray-100 focus:ring-gray-500",
-  };
-  const sizes = {
-    sm: "px-3 py-1.5 text-sm",
-    default: "px-4 py-2 text-sm",
-  };
-  return (
-    <button
-      className={`${base} ${variants[variant]} ${sizes[size]} ${className}`}
-      onClick={onClick}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-};
-
-const Badge = ({ children, className = "" }) => (
-  <span
-    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${className}`}
-  >
-    {children}
-  </span>
-);
-
-const Card = ({ children, className = "", onClick }) => (
-  <div
-    className={`bg-white rounded-lg border border-gray-200 shadow-sm ${className}`}
-    onClick={onClick}
-  >
-    {children}
-  </div>
-);
-
-const CardContent = ({ children, className = "" }) => (
-  <div className={className}>{children}</div>
-);
-
-const Avatar = ({ children, className = "" }) => (
-  <div
-    className={`relative inline-flex items-center justify-center overflow-hidden bg-gray-100 rounded-full ${className}`}
-  >
-    {children}
-  </div>
-);
-
-const AvatarImage = ({ src, alt }) =>
-  src ? <img src={src} alt={alt} className="w-full h-full object-cover" /> : null;
-
-const AvatarFallback = ({ children, className = "" }) => (
-  <span className={`text-gray-500 ${className}`}>{children}</span>
-);
-
-const Progress = ({ value, className = "" }) => (
-  <div className={`w-full bg-gray-200 rounded-full h-2.5 ${className}`}>
-    <div
-      className="bg-blue-600 h-2.5 rounded-full transition-all"
-      style={{ width: `${value}%` }}
-    ></div>
-  </div>
-);
-
-// 🔹 Simple Tabs implementation
-const Tabs = ({ children, defaultValue, className = "" }) => {
-  const [activeTab, setActiveTab] = useState(defaultValue);
-  return (
-    <div className={className}>
-      {React.Children.map(children, (child) =>
-        React.cloneElement(child, { activeTab, setActiveTab })
-      )}
-    </div>
-  );
-};
-
-const TabsList = ({ children, activeTab, setActiveTab }) => (
-  <div className="inline-flex h-10 items-center justify-center rounded-md bg-gray-100 p-1">
-    {React.Children.map(children, (child) =>
-      React.cloneElement(child, { activeTab, setActiveTab })
-    )}
-  </div>
-);
-
-const TabsTrigger = ({ children, value, activeTab, setActiveTab }) => (
-  <button
-    className={`inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium transition-all ${
-      activeTab === value
-        ? "bg-white text-gray-900 shadow-sm"
-        : "text-gray-600 hover:text-gray-900"
-    }`}
-    onClick={() => setActiveTab(value)}
-  >
-    {children}
-  </button>
-);
-
-const TabsContent = ({ children, value, activeTab }) =>
-  activeTab === value ? <div>{children}</div> : null;
-
-// 🔹 Main Profile Page
 const ProfilePage = () => {
-  const [viewMode] = useState("grid");
+  const [viewMode] = useState("");
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const [userData, setUserData] = useState({
@@ -139,8 +16,7 @@ const ProfilePage = () => {
     job: "Senior Product Manager",
     location: "San Francisco, CA",
     website: "techreviews.blog",
-    avatar:
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
+    avatar: "",
     followers: 1205,
     trustScore: 87,
     badges: ["verified", "expert", "trendsetter"],
@@ -178,8 +54,7 @@ const ProfilePage = () => {
       product: "iPhone 15 Pro",
       rating: 5,
       title: "Incredible camera upgrade, but battery life could be better",
-      image:
-        "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&h=300&fit=crop",
       likes: 124,
       comments: 18,
       timestamp: "2 days ago",
@@ -189,8 +64,7 @@ const ProfilePage = () => {
       product: "MacBook Pro M3",
       rating: 4,
       title: "Powerful performance, worth the upgrade from M1",
-      image:
-        "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop",
       likes: 89,
       comments: 12,
       timestamp: "1 week ago",
@@ -200,8 +74,7 @@ const ProfilePage = () => {
       product: "AirPods Pro 2",
       rating: 5,
       title: "Best noise cancellation I've ever experienced",
-      image:
-        "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=300&h=300&fit=crop",
+      image: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=300&h=300&fit=crop",
       likes: 156,
       comments: 24,
       timestamp: "2 weeks ago",
@@ -237,6 +110,7 @@ const ProfilePage = () => {
     setUserData((prev) => ({
       ...prev,
       ...updatedData.profile,
+      avatar: updatedData.profile.profileImage || prev.avatar,
       email: updatedData.account.email,
     }));
     alert("Profile updated successfully!");
@@ -246,26 +120,29 @@ const ProfilePage = () => {
 
   return (
     <div className="relative min-h-screen bg-gray-50">
-      {/* 🔹 Main Profile Content */}
       <div
         className={`transition-all duration-300 ${
           isEditModalOpen ? "blur-sm brightness-50 pointer-events-none" : ""
         }`}
       >
-        <div className="max-w-5xl mx-auto px-4 py-25">
-          {/* 🔹 Profile Header */}
-          <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl p-6 text-white mb-6">
+        <div className="max-w-4xl mx-auto px-4 py-25">
+          {/* Profile Header */}
+          <div className={`${COMMON_STYLES.gradientHeader} rounded-2xl p-6 text-white mb-6`}>
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-4">
                 <Avatar className="w-20 h-20 border-4 border-white">
-                  <AvatarImage src={userData.avatar} alt={userData.name} />
-                  <AvatarFallback className="text-2xl">
-                    {userData.name.charAt(0)}
-                  </AvatarFallback>
+                  {userData.avatar ? (
+                    <AvatarImage src={userData.avatar} alt={userData.name} />
+                  ) : (
+                    <AvatarFallback className="text-2xl">
+                      {userData.name.charAt(0)}
+                    </AvatarFallback>
+                  )}
                 </Avatar>
+
                 <div>
                   <h1 className="text-2xl font-bold">{userData.name}</h1>
-                  <p className="text-blue-100">@{userData.username}</p>
+                  <p className="text-blue-100">{userData.email}</p>
                   <div className="flex items-center gap-4 mt-2 text-sm">
                     <span className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
@@ -287,9 +164,6 @@ const ProfilePage = () => {
                   <Settings className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
-                <Button variant="secondary" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
               </div>
             </div>
             {userData.bio && (
@@ -297,7 +171,7 @@ const ProfilePage = () => {
             )}
           </div>
 
-          {/* 🔹 Stats */}
+          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 text-center">
@@ -310,7 +184,7 @@ const ProfilePage = () => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-green-600">
-                  {userData.followers.toLocaleString()}
+                  {formatNumber(userData.followers)}
                 </div>
                 <div className="text-sm text-gray-500">Followers</div>
               </CardContent>
@@ -318,7 +192,7 @@ const ProfilePage = () => {
             <Card>
               <CardContent className="p-4 text-center">
                 <div className="text-2xl font-bold text-purple-600">
-                  {profileStats.totalLikes.toLocaleString()}
+                  {formatNumber(profileStats.totalLikes)}
                 </div>
                 <div className="text-sm text-gray-500">Likes</div>
               </CardContent>
@@ -333,7 +207,7 @@ const ProfilePage = () => {
             </Card>
           </div>
 
-          {/* 🔹 Trust Score & Badges */}
+          {/* Trust Score & Badges */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             <Card>
               <CardContent className="p-6">
@@ -367,7 +241,7 @@ const ProfilePage = () => {
             </Card>
           </div>
 
-          {/* 🔹 Tabs */}
+          {/* Tabs */}
           <Tabs defaultValue="reviews" className="space-y-6">
             <TabsList>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
@@ -486,7 +360,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* 🔹 Profile Edit Modal */}
+      {/* Profile Edit Modal */}
       <ProfileEditModal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
