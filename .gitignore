@@ -512,3 +512,4 @@ Dockerfile.*
 
 # Git conflicts
 *.orig
+dump.rdb
