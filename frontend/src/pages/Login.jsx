@@ -69,18 +69,22 @@ export default function Login() {
     }
 
     try {
-      const response = await API.post("/auth/login", {
-        ...formData,
-        rememberMe
+      const response = await API.post("/login", {
+        email: formData.email,
+        password: formData.password
       });
-      
-      localStorage.setItem("token", response.data.token);
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      toast.success("Login successful!");
-      navigate('/');
+
+      if (response.data.user) {
+        localStorage.setItem("token", response.data.token || 'temp_token');
+        localStorage.setItem("user", JSON.stringify(response.data.user));
+        toast.success(response.data.message || "Login successful!");
+        navigate('/reviews');
+      } else {
+        toast.error(response.data.message || "Login failed");
+      }
     } catch (error) {
       console.error("Login error:", error);
-      toast.error(error.response?.data?.message || "Login failed. Please check your credentials.");
+      toast.error(error.response?.data?.error || error.response?.data?.message || "Login failed. Please check your credentials.");
     }
   };
 

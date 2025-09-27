@@ -91,29 +91,45 @@ export default function Register() {
     setIsLoading(true);
     try {
       if (!showOtp) {
-        const response = await API.post("/auth/register", {
+        // Register user - this will send OTP
+        const response = await API.post("/register", {
           name: formData.name,
           email: formData.email,
           password: formData.password
         });
 
-        toast.success("Registration successful!");
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        navigate("/reviews");
+        if (response.data.message.includes("OTP sent")) {
+          toast.success("OTP sent to your email!");
+          setShowOtp(true);
+        } else {
+          toast.error(response.data.message || "Registration failed");
+        }
       } else {
         // OTP verification flow
         const enteredOtp = otp.join("");
         if (enteredOtp.length !== 6) {
           toast.error("Please enter the 6-digit OTP");
-        } else {
-          toast.success("OTP verified successfully!");
+          return;
+        }
+
+        const verificationResponse = await API.post("/verify", {
+          email: formData.email,
+          otp: enteredOtp,
+          password: formData.password,
+          name: formData.name
+        });
+
+        if (verificationResponse.data.success) {
+          toast.success("Account verified successfully!");
+          // User is automatically logged in after verification
           navigate("/reviews");
+        } else {
+          toast.error(verificationResponse.data.message || "OTP verification failed");
         }
       }
     } catch (error) {
       console.error("Register error:", error);
-      toast.error(error.response?.data?.message || "Registration failed");
+      toast.error(error.response?.data?.error || error.response?.data?.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }
