@@ -1,16 +1,12 @@
 import axios from "axios";
 
+
+// Set the base URL for the API
 const API = axios.create({
-  baseURL: "http://localhost:6001",
+  baseURL: import.meta.env.VITE_SERVER_URL || "http://localhost:6001",
+  withCredentials: true
 });
 
-// Add token automatically if available
-API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    req.headers.Authorization = `Bearer ${token}`;
-  }
-  return req;
-});
+// Authentication is handled via cookies, no need for Authorization header
 
 export default API;

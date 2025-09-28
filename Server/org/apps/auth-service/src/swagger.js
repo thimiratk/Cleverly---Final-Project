@@ -6,8 +6,8 @@ const doc = {
         description: 'Auth Service API',
         version: "1.0.0"
     },
-    host: 'animated-space-umbrella-g4x9q94q5gv53p47-6001.app.github.dev',
-    schemes: ['https']
+    host: 'localhost:6001',
+    schemes: ['http']
 };
 
 const outputFile = './swagger-output.json';

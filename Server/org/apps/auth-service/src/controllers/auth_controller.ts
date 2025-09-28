@@ -144,3 +144,14 @@ export const resetUserPassword = async (req:Request,res:Response,next:NextFuncti
         return next(error);
     }
 }
+
+export const userLogout = async (req:Request,res:Response,next:NextFunction) => {
+    try {
+        // Clear the cookies
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+        res.status(200).json({ message: "Logged out successfully" });
+    } catch (error) {
+        return next(error);
+    }
+}

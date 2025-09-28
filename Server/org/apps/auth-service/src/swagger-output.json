@@ -5,10 +5,10 @@
     "description": "Auth Service API",
     "version": "1.0.0"
   },
-  "host": "animated-space-umbrella-g4x9q94q5gv53p47-6001.app.github.dev",
+  "host": "localhost:6001",
   "basePath": "/",
   "schemes": [
-    "https"
+    "http"
   ],
   "paths": {
     "/register": {
@@ -80,7 +80,7 @@
         }
       }
     },
-    "/loign": {
+    "/login": {
       "post": {
         "description": "",
         "parameters": [
@@ -94,6 +94,63 @@
                   "example": "any"
                 },
                 "password": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/logout": {
+      "post": {
+        "description": "",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/forgot-password": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/verify-forgot-password-otp": {
+      "post": {
+        "description": "",
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/reset-password": {
+      "post": {
+        "description": "",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "email": {
+                  "example": "any"
+                },
+                "newPassword": {
                   "example": "any"
                 }
               }

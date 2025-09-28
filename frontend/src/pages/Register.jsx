@@ -121,7 +121,26 @@ export default function Register() {
 
         if (verificationResponse.data.success) {
           toast.success("Account verified successfully!");
-          // User is automatically logged in after verification
+          // After successful verification, automatically log in the user to set cookies and get user data
+          const loginResponse = await API.post("/login", {
+            email: formData.email,
+            password: formData.password
+          });
+
+          if (loginResponse.data.user) {
+            localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+          }
+          
+
+          if (loginResponse.data.accessToken) {
+            localStorage.setItem('accessToken', loginResponse.data.accessToken);
+          }
+
+          if (loginResponse.data.refreshToken) {
+            localStorage.setItem('refreshToken', loginResponse.data.refreshToken);
+          }
+
+
           navigate("/reviews");
         } else {
           toast.error(verificationResponse.data.message || "OTP verification failed");
@@ -135,9 +154,19 @@ export default function Register() {
     }
   };
 
-  const handleResendOtp = () => {
-    setTimer(60); // restart countdown
-    toast.success("OTP resent successfully!");
+  const handleResendOtp = async (e) => {
+    e.preventDefault();
+    try {setTimer(60);
+    const response = await API.post("/register", {
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        }); // restart countdown
+    toast.success("OTP resent successfully!");}
+    catch (error) {
+      console.error("Resend OTP error:", error);
+      toast.error(error.response?.data?.error || error.response?.data?.message || "Failed to resend OTP");
+    }
     // call your API to resend OTP here
   };
 

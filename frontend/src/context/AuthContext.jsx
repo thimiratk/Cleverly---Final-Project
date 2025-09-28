@@ -38,8 +38,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Logout function
-  const logout = () => {
-    AuthService.logoutUser();
+  const logout = async () => {
+    await AuthService.logoutUser();
     setUser(null);
     navigate('/login');
   };

@@ -50,43 +50,24 @@ export default function Login() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  e.preventDefault();
+  if (!validateForm()) return;
 
-    setIsLoading(true);
-    try {
-      const result = await login(formData.email, formData.password);
-      if (!result.success) {
-        toast.error(result.message);
-      } else {
-        toast.success('Login successful!');
-      }
-       navigate('/reviews');   // ✅ redirect after login
-    } catch (error) {
-      toast.error(error.message);
-    } finally {
-      setIsLoading(false);
+  setIsLoading(true);
+  try {
+    const result = await login(formData.email, formData.password);
+    if (result.success) {
+      toast.success('Login successful!');
+    } else {
+      toast.error(result.message);
     }
+  } catch (error) {
+    toast.error(error.message || "Login failed. Please check your credentials.");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
-    try {
-      const response = await API.post("/login", {
-        email: formData.email,
-        password: formData.password
-      });
-
-      if (response.data.user) {
-        localStorage.setItem("token", response.data.token || 'temp_token');
-        localStorage.setItem("user", JSON.stringify(response.data.user));
-        toast.success(response.data.message || "Login successful!");
-        navigate('/reviews');
-      } else {
-        toast.error(response.data.message || "Login failed");
-      }
-    } catch (error) {
-      console.error("Login error:", error);
-      toast.error(error.response?.data?.error || error.response?.data?.message || "Login failed. Please check your credentials.");
-    }
-  };
 
 return (
   <div className="min-h-screen bg-white flex justify-center items-center gap-x-50">

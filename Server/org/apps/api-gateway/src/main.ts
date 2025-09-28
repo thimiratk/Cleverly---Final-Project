@@ -17,7 +17,7 @@ import proxy from 'express-http-proxy';
 const app = express();
 
 app.use(cors({
-  origin:["http://localhost:3000"],
+  origin:["https://animated-space-umbrella-g4x9q94q5gv53p47-5173.app.github.dev"],
   allowedHeaders:["Authorization", "Content-Type"],
   credentials: true,
 }))
