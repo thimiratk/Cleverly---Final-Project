@@ -10,10 +10,13 @@ import Reviews from "./pages/Reviews";
 import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
+
 import { AuthProvider } from "./context/AuthContext";
 import CreateReview from "./pages/WriteReview";
 import LoadingScreen from "./pages/LoadingScreen";
 import ForgotPassword from "./pages/ForgotPassword";
+
+
 
 function AppContent() {
   const [loading, setLoading] = useState(true);

@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { ValidationError } from "@packages/error-handler";
+import { AuthError, ValidationError } from "@packages/error-handler";
 import prisma from "@packages/libs/prisma";
 import { handleForgotPassword, sendOtp, validationRegistrationData, verfyOtp, VerifyForgotpasswordOtp } from "../utils/auth.helper"
 import { checkOtpRestriction } from "../utils/auth.helper"
 import { trackOtpRequest } from "../utils/auth.helper"
 import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import jwt, { JsonWebTokenError } from "jsonwebtoken";
 import { setCookie } from "../utils/cookies/setCookie";
 
 
@@ -153,5 +153,64 @@ export const userLogout = async (req:Request,res:Response,next:NextFunction) => 
         res.status(200).json({ message: "Logged out successfully" });
     } catch (error) {
         return next(error);
+    }
+}
+
+export const refreshToken = async (req:Request,res:Response,next:NextFunction)=>{
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken) {
+            return next( new ValidationError("Refresh token not found, please login again"));
+        }
+        // Verify refresh token
+        
+        const decoded = jwt.verify(
+                refreshToken,
+                process.env.REFRESH_TOKEN_SECRET as string  
+            ) as {id:string,role:string};
+            
+        if(!decoded || !decoded.id || !decoded.role){
+                return  new JsonWebTokenError("Invalid token payload, please login again");
+            }
+        // let account;
+        // if(decoded.role === 'user')
+        const users =await prisma.users.findUnique({ where: { id: decoded.id } });
+        
+        if (!users) {
+            return new AuthError("User not found, please login again")
+        }
+            // Generate new tokens
+            const newAccessToken = jwt.sign(
+                { id:decoded.id, role:decoded.role },
+                process.env.ACCESS_TOKEN_SECRET as string,
+                { expiresIn: '1h' }
+            );
+            const newRefreshToken = jwt.sign(
+                { id:decoded.id, role:decoded.role},
+                process.env.REFRESH_TOKEN_SECRET as string,
+                { expiresIn: '7h' }
+            );
+
+            // Set new tokens in cookies
+            setCookie(res, 'accessToken', newAccessToken);
+            setCookie(res, 'refreshToken', newRefreshToken);
+
+            res.status(200).json({ 
+                success: true });
+       
+    } catch (error) {
+        return next(error);
+    }
+}   
+
+export const getUser = async(req:any,res:Response,next:NextFunction)=>{
+    try {
+        const user = req.user;
+        res.status(200).json({ 
+            success: true,
+            user 
+        });
+    } catch (error) {
+        next(error);
     }
 }

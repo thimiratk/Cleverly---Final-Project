@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { Search, Plus, Bell, Home, User, Flame, Compass } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useUser } from "../hooks/useUser";
 
 export default function Navbar() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const { user, isLoading, isError } = useUser();
+  console.log(isError);
+
+  console.log(user);
+
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -13,7 +19,7 @@ export default function Navbar() {
     <header className="bg-white border-b border-gray-200 fixed top-0 left-0 w-full z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo (clickable to Home) */}
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center">
               <span className="text-white font-bold text-sm">C</span>
@@ -70,15 +76,16 @@ export default function Navbar() {
 
           {/* Right Actions */}
           <div className="flex items-center space-x-3">
-            {/* Sign In Button */}
-            <Link
-              to="/login"
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-              style={{ marginRight: '0.5rem' }}
-            >
-              Sign In
-            </Link>
-            {/* Create Review Button */}
+            {!isLoading && !user && (
+              <Link
+                to="/login"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ marginRight: "0.5rem" }}
+              >
+                Sign In
+              </Link>
+            )}
+
             <Link
               to="/create-review"
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center space-x-2"
@@ -87,7 +94,6 @@ export default function Navbar() {
               <span>Review</span>
             </Link>
 
-            {/* Notifications */}
             <button className="relative p-2">
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
@@ -96,49 +102,53 @@ export default function Navbar() {
             </button>
 
             {/* User Dropdown */}
-            <div className="relative">
-              <button
-                onClick={toggleDropdown}
-                className="w-8 h-8 bg-gray-400 rounded-full"
-              ></button>
+            {user && (
+              <div className="relative">
+                <button
+                  onClick={toggleDropdown}
+                  className="w-8 h-8 bg-gray-400 rounded-full"
+                ></button>
 
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border py-2">
-                  <div className="px-4 py-3 border-b">
-                    <div className="font-semibold text-gray-900">John Doe</div>
-                    <div className="text-sm text-gray-600">@johndoe_reviews</div>
-                    <div className="flex items-center mt-2 space-x-2">
-                      <span className="text-sm text-gray-600">Trust Score:</span>
-                      <span className="text-sm font-semibold text-gray-900">
-                        87%
-                      </span>
+                {isDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border py-2">
+                    <div className="px-4 py-3 border-b">
+                      <div className="font-semibold text-gray-900">
+                        {user.name || "John Doe"}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        @{"johndoe_reviews"}
+                      </div>
+                      <div className="flex items-center mt-2 space-x-2">
+                        <span className="text-sm text-gray-600">Trust Score:</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          87%
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="py-1">
+                      <Link
+                        to="/profile"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
+                      >
+                        <User className="w-4 h-4 text-gray-500" />
+                        <span>My Profile</span>
+                      </Link>
+
+                      <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <span className="ml-7">Settings</span>
+                      </button>
+
+                      <div className="border-t my-1"></div>
+
+                      <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                        <span className="ml-7">Sign Out</span>
+                      </button>
                     </div>
                   </div>
-
-                  <div className="py-1">
-                    <Link
-                      to="/profile"
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-3"
-                    >
-                      <User className="w-4 h-4 text-gray-500" />
-                      <span>My Profile</span>
-                    </Link>
-
-                    <button className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      <span className="ml-7">Settings</span>
-                    </button>
-
-                    <div className="border-t my-1"></div>
-
-                    <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
-                      <span className="ml-7">Sign Out</span>
-                    </button>
-
-
-                  </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
