@@ -89,16 +89,17 @@ export const userLogin = async(req:Request,res:Response,next:NextFunction)=>{
         // Generate JWT token (implementation omitted for brevity)
 
         const accessToken = jwt.sign(
-            { userId: user.id, role: "user" },
-            process.env.ACCESS_TOKEN_SECRET as string,
-            { expiresIn: '1h' }
-        );
+  { id: user.id, role: "user" },   // changed userId → id
+  process.env.ACCESS_TOKEN_SECRET as string,
+  { expiresIn: '1h' }
+);
 
-        const refreshToken = jwt.sign(
-            { userId: user.id, role: "user" },
-            process.env.REFRESH_TOKEN_SECRET as string,
-            { expiresIn: '7h' }
-        );
+const refreshToken = jwt.sign(
+  { id: user.id, role: "user" },   // changed userId → id
+  process.env.REFRESH_TOKEN_SECRET as string,
+  { expiresIn: '7h' }
+);
+
 
         setCookie(res, 'refreshToken', refreshToken);
         setCookie(res, 'accessToken', accessToken);
@@ -203,14 +204,23 @@ export const refreshToken = async (req:Request,res:Response,next:NextFunction)=>
     }
 }   
 
-export const getUser = async(req:any,res:Response,next:NextFunction)=>{
-    try {
-        const user = req.user;
-        res.status(200).json({ 
-            success: true,
-            user 
-        });
-    } catch (error) {
-        next(error);
+export const getUser = async (req: any, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Not authenticated" });
     }
-}
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: req.user.id,
+        email: req.user.email,
+        name: req.user.name,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getUser controller:", error);
+    next(error);
+  }
+};
+

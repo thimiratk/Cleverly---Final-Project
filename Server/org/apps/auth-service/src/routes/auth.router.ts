@@ -9,7 +9,7 @@ router.post('/verify', verifyUser);
 router.post(`/login` , userLogin);
 router.post('/logout', userLogout);
 router.post('/refresh-token', refreshToken);
-router.post(`/api/auth/me`,isAuthenticated,getUser);
+router.get(`/api/auth/me`,isAuthenticated,getUser);
 router.post(`/forgot-password`, userForgotPassword);
 router.post(`/verify-forgot-password-otp`, userVerifyForgotpasswordOtp);
 router.post(`/reset-password`, resetUserPassword);
