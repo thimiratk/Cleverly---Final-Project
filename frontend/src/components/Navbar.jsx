@@ -4,8 +4,10 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { useQueryClient } from "@tanstack/react-query";
 import API from "../services/api";
+import CreateReview from "./CreateReview/";
 
 export default function Navbar() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const { user, isLoading } = useUser();
@@ -30,6 +32,28 @@ export default function Navbar() {
 
   return (
     <>
+      {/* Create Review Modal - positioned at root level */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="relative w-[90%] max-w-2xl mx-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
+              {/* Close Button */}
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded-full p-2 shadow-lg"
+              >
+                ✕
+              </button>
+
+              {/* Review Form */}
+              <div className="p-6">
+                <CreateReview onReviewCreated={() => setIsModalOpen(false)} />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Desktop/Tablet Top Navbar - MODERN DESIGN */}
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 fixed top-0 left-0 w-full z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -103,13 +127,14 @@ export default function Navbar() {
                   Sign In
                 </Link>
               )}
-              <Link
-                to="/create-review"
+              {/* Review Button */}
+              <button
+                onClick={() => setIsModalOpen(true)}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2 rounded-xl text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all"
               >
                 <Plus className="w-4 h-4 mr-1.5" />
                 Review
-              </Link>
+              </button>
               <button className="relative p-2.5 hover:bg-gray-100 rounded-xl transition-colors">
                 <Bell className="w-5 h-5 text-gray-600" />
                 <span className="absolute top-1 right-1 w-4 h-4 text-xs flex items-center justify-center bg-red-500 text-white rounded-full font-semibold">

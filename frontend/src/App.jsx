@@ -7,13 +7,14 @@ import { useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
-import Reviews from "./pages/Reviews";
+
+
 import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 
 import { AuthProvider } from "./context/AuthContext";
-import CreateReview from "./pages/WriteReview";
+
 import LoadingScreen from "./pages/LoadingScreen";
 import ForgotPassword from "./pages/ForgotPassword";
 
@@ -48,11 +49,11 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reviews" element={<Reviews />} />
+        
         <Route path="/trendings" element={<Trendings />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/create-review" element={<CreateReview />} />
+        
       </Routes>
     </>
   );

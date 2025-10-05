@@ -1,11 +1,14 @@
-﻿import React from "react";
+﻿﻿import React, { useState } from "react";
 import StoriesSection from "../components/StoriesSection";
 import TrendingSection from "../components/TrendingSection";
 import ReviewCard from "../components/ReviewCard";
 import CategoriesSection from "../components/CategoriesSection";
+import CreateReview from "../components/CreateReview";
 import { Link } from "react-router-dom";
 
 export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   // Dummy reviews for the feed
   const reviews = [
     {
@@ -101,22 +104,22 @@ export default function Home() {
           <div className="bg-gradient-to-r from-purple-500 to-blue-500 rounded-2xl p-6 mb-6 text-white shadow-lg">
             <h3 className="text-xl font-bold mb-2">Share Your Experience! ✨</h3>
             <p className="text-purple-100 mb-4">Help others make better decisions with your honest reviews</p>
-            <Link
-              to="/reviews/create"
+            <button
+              onClick={() => setIsModalOpen(true)}
               className="inline-flex items-center px-6 py-3 bg-white text-purple-600 font-semibold rounded-xl hover:bg-gray-50 transition shadow-md"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
               Write a Review
-            </Link>
+            </button>
           </div>
           {/* Feed of reviews */}
           <div className="space-y-6">
             {reviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
             ))}
-            
+
             {/* Load More Button */}
             <div className="text-center py-8">
               <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg transition">
@@ -124,6 +127,26 @@ export default function Home() {
               </button>
             </div>
           </div>
+
+          {/* Create Review Modal */}
+          {isModalOpen && (
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40">
+              <div className="relative w-[90%] max-w-lg">
+                <div className="bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
+                  {/* Close Button */}
+                  <button
+                    onClick={() => setIsModalOpen(false)}
+                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
+                  >
+                    ✕
+                  </button>
+
+                  {/* Review Form */}
+                  <CreateReview onReviewCreated={() => setIsModalOpen(false)} />
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Trending sidebar (right) */}

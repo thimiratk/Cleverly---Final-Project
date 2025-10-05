@@ -36,12 +36,33 @@ model users {
 
 }
 
+model categories {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  subCategories subCategories[]
+  reviews reviews[]
+}
+
+model subCategories {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  categoryId String @db.ObjectId
+  category categories @relation(fields: [categoryId], references: [id])
+  reviews reviews[]
+}
+
 model reviews {
   id String @id @default(auto()) @map("_id") @db.ObjectId
+  categoryId String @db.ObjectId
+  category categories @relation(fields: [categoryId], references: [id])
+  subCategoryId String? @db.ObjectId
+  subCategory subCategories? @relation(fields: [subCategoryId], references: [id])
+  productOrService String
   product String
   rating Int
-  comment String
-  image String?
+  reviewText String
+  photos String[]
+  videos String[]
   userId String @db.ObjectId
   user users @relation(fields: [userId], references: [id])
   likes String[]

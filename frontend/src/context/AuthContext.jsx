@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
     const result = await AuthService.loginUser({ email, password });
     if (result.success) {
       setUser(result.user);
-      navigate('/reviews'); // redirect after login
+      navigate('/'); // redirect after login
     }
     return result;
   };
@@ -32,7 +32,7 @@ export const AuthProvider = ({ children }) => {
     const result = await AuthService.registerUser(userData);
     if (result.success) {
       setUser(result.user);
-      navigate('/reviews'); // redirect after registration
+      navigate('/'); // redirect after registration
     }
     return result;
   };

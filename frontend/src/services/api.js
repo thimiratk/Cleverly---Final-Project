@@ -78,3 +78,24 @@ API.interceptors.response.use(
 
 // Authentication is handled via cookies, no need for Authorization header
 export default API;
+
+// Review API functions
+const reviewApi = axios.create({
+  baseURL: import.meta.env.VITE_REVIEW_SERVER_URL || "http://localhost:6002",
+  withCredentials: true,
+});
+
+export const createReview = async (reviewData) => {
+  const response = await reviewApi.post('/reviews', reviewData);
+  return response.data;
+};
+
+export const updateReview = async (reviewId, reviewData) => {
+  const response = await reviewApi.put(`/reviews/${reviewId}`, reviewData);
+  return response.data;
+};
+
+export const getReviews = async (params = {}) => {
+  const response = await reviewApi.get('/reviews', { params });
+  return response.data;
+};

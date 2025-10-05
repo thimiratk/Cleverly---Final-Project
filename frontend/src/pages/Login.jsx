@@ -5,7 +5,7 @@ import { toast } from "react-hot-toast";
 
 import loginImage from '../assets/login.png';
 import { useAuth } from '../context/AuthContext';
-import API from "../services/api";
+
 import GoogleButton from "../components/GoogleButtonSignin";
 
 

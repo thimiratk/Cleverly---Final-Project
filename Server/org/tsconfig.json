@@ -17,6 +17,15 @@
     },
     {
       "path": "./apps/mode-dash"
+    },
+    {
+      "path": "./apps/review-service-e2e"
+    },
+    {
+      "path": "./apps/review-service"
+    },
+    {
+      "path": "./apps/admin-dash"
     }
   ]
 }

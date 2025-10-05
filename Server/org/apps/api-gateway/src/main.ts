@@ -50,9 +50,20 @@ app.get('/gateway-health', (req, res) => {
 });
 
 // Proxy requests to the downstream service. Wrap proxy errors so they return 502
+// Route review requests to review service
+app.use("/reviews", proxy("http://localhost:6002", {
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Review service proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route all other requests to auth service
 app.use("/", proxy("http://localhost:6001", {
   proxyErrorHandler: (err, res, next) => {
-    console.error('Proxy error:', err);
+    console.error('Auth service proxy error:', err);
     if (!res.headersSent) {
       res.status(502).json({ error: 'Bad gateway', details: err.message });
     }
