@@ -4,6 +4,8 @@ import cors from 'cors';
 import { errorMiddleware } from '@packages/error-handler/error-middleware';
 import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
+import passport from 'passport';
+import './utils/passport-google';
 const swaggerDocument =require('./swagger-output.json');
 
 
@@ -26,6 +28,9 @@ app.options('*', cors());
 
 app.use(express.json());
 app.use(cookieParser());
+
+// Initialize Passport
+app.use(passport.initialize());
 
 app.get('/', (req, res) => {
     res.send({ 'message': 'Hello welcome to cleverly'});

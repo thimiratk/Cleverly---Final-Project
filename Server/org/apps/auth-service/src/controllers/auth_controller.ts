@@ -82,6 +82,9 @@ export const userLogin = async(req:Request,res:Response,next:NextFunction)=>{
         if (!user) {
             throw new ValidationError("Invalid email , user does not exist");
         }
+        if (user.provider === 'google') {
+            throw new ValidationError("Please login with Google");
+        }
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
             throw new ValidationError("Invalid password");
@@ -221,6 +224,45 @@ export const getUser = async (req: any, res: Response, next: NextFunction) => {
   } catch (error) {
     console.error("Error in getUser controller:", error);
     next(error);
+  }
+};
+
+export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = req.user as any;
+    if (!user) {
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=auth_failed`);
+      return;
+    }
+    if (user.provider && user.provider !== 'google') {
+      res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=login_method_restricted`);
+      return;
+    }
+
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
+      { id: user.id, role: "user" },
+      process.env.ACCESS_TOKEN_SECRET as string,
+      { expiresIn: '1h' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id, role: "user" },
+      process.env.REFRESH_TOKEN_SECRET as string,
+      { expiresIn: '7h' }
+    );
+
+    // Set cookies
+    setCookie(res, 'refreshToken', refreshToken);
+    setCookie(res, 'accessToken', accessToken);
+
+    // Redirect to frontend with success
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/reviews`);
+    return;
+  } catch (error) {
+    console.error("Google auth callback error:", error);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=auth_failed`);
+    return;
   }
 };
 

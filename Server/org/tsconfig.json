@@ -14,6 +14,9 @@
     },
     {
       "path": "./apps/api-gateway-e2e"
+    },
+    {
+      "path": "./apps/mode-dash"
     }
   ]
 }

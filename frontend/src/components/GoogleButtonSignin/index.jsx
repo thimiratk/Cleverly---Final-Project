@@ -1,9 +1,13 @@
 import * as React from "react";
 
-const GoogleButton = ({ onClick }) => {
+const GoogleButton = () => {
+  const handleGoogleSignIn = () => {
+    window.location.href = `${import.meta.env.VITE_SERVER_URL || "http://localhost:6001"}/auth/google`;
+  };
+
   return (
     <button
-      onClick={onClick}
+      onClick={handleGoogleSignIn}
       className="flex items-center gap-3 px-5 py-2 border border-gray-300 rounded-lg shadow-sm hover:bg-gray-100 transition"
     >
       {/* Google Logo */}
