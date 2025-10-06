@@ -3,10 +3,10 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_OPTIONS= npx nx run-many --target=serve --all --configuration=development"
-,
+    "dev": "NODE_OPTIONS= npx nx run-many --target=serve --all --configuration=development",
     "auth-docs": "node apps/auth-service/src/swagger.js",
-    "mode-dash": "npx nx run-many --target=dev --all --projects=mode-dash"
+    "mode-dash": "npx nx run-many --target=dev --all --projects=mode-dash",
+    "admin-dash": "npx nx run-many --target=dev --all --projects=admin-dash"
   },
   "private": true,
   "dependencies": {
@@ -79,6 +79,7 @@
     "webpack-cli": "^5.1.4"
   },
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "Server/org/apps/*"
   ]
 }

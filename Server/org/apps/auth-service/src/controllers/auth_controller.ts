@@ -227,6 +227,16 @@ export const getUser = async (req: any, res: Response, next: NextFunction) => {
   }
 };
 
+// Get count of users
+export const getUserCount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const count = await prisma.users.count();
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const googleAuthCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user as any;

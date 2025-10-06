@@ -88,3 +88,13 @@ export const getReviews = async (req: Request, res: Response, next: NextFunction
     next(error);
   }
 };
+
+// Get count of reviews
+export const getReviewCount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const count = await prisma.reviews.count();
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+};

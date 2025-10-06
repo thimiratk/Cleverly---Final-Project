@@ -1,6 +1,6 @@
 import express,{ Router } from 'express';
 import passport from 'passport';
-import {getUser, refreshToken,resetUserPassword, userForgotPassword, userLogin, userLogout, userRegistration, userVerifyForgotpasswordOtp, verifyUser, googleAuthCallback } from '../controllers/auth_controller';
+import {getUser, refreshToken,resetUserPassword, userForgotPassword, userLogin, userLogout, userRegistration, userVerifyForgotpasswordOtp, verifyUser, googleAuthCallback, getUserCount } from '../controllers/auth_controller';
 import isAuthenticated from '@packages/middleware/isAuthenticated';
 
 const router: Router = express.Router();
@@ -19,5 +19,6 @@ router.get('/auth/google', passport.authenticate('google', { scope: ['profile', 
 
 router.get('/auth/google/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleAuthCallback);
 
+router.get('/users/count', getUserCount);
 
 export default router;
