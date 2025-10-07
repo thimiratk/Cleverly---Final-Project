@@ -40,8 +40,8 @@
       "exclude": [
         "apps/auth-service-e2e/**/*",
         "apps/api-gateway-e2e/**/*",
-        "apps/api-gateway-e2e/**/*",
-        "apps/review-service-e2e/**/*"
+        "apps/review-service-e2e/**/*",
+        "apps/domain-management-e2e/**/*"
       ]
     },
     {
@@ -77,18 +77,11 @@
   "targetDefaults": {
     "@nx/esbuild:esbuild": {
       "cache": true,
-      "dependsOn": [
-        "^build"
-      ],
-      "inputs": [
-        "production",
-        "^production"
-      ]
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"]
     },
     "test": {
-      "dependsOn": [
-        "^build"
-      ]
+      "dependsOn": ["^build"]
     }
   },
   "generators": {
@@ -96,6 +89,14 @@
       "application": {
         "style": "tailwind",
         "linter": "none"
+      }
+    }
+  },
+  "tasksRunnerOptions": {
+    "default": {
+      "runner": "nx/tasks-runners/default",
+      "options": {
+        "useDaemonProcess": true
       }
     }
   }

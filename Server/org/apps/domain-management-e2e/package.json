@@ -1,0 +1,26 @@
+{
+  "name": "@org/domain-management-e2e",
+  "version": "0.0.1",
+  "private": true,
+  "nx": {
+    "implicitDependencies": [
+      "@org/domain-management"
+    ],
+    "targets": {
+      "e2e": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{projectRoot}/test-output/jest/coverage"
+        ],
+        "options": {
+          "jestConfig": "apps/domain-management-e2e/jest.config.ts",
+          "passWithNoTests": true
+        },
+        "dependsOn": [
+          "@org/domain-management:build",
+          "@org/domain-management:serve"
+        ]
+      }
+    }
+  }
+}

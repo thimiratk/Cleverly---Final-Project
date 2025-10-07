@@ -11,6 +11,7 @@ import ReviewVerification from './pages/ReviewVerification';
 import BadgeManagement from './pages/BadgeManagement';
 import TrustAndSafety from './pages/TrustAndSafety';
 import FraudDetection from './pages/FraudDetection';
+import DomainManagement from './pages/DomainManagement';
 import './index.css';
 
 const App = () => {
@@ -38,6 +39,7 @@ const App = () => {
           <Route path="/analytics" element={<Analytics />} />
           <Route path="/moderator" element={<ModeratorManagement />} />
           <Route path="/report" element={<ReportManagement />} />
+          <Route path="/domain-management" element={<DomainManagement />} />
           <Route path="/admin-profile" element={<AdminProfile />} />
           <Route path="/admin-settings" element={<AdminSettings />} />
         </Routes>

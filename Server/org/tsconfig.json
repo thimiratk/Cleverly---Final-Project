@@ -16,16 +16,16 @@
       "path": "./apps/api-gateway-e2e"
     },
     {
-      "path": "./apps/mode-dash"
-    },
-    {
       "path": "./apps/review-service-e2e"
     },
     {
       "path": "./apps/review-service"
     },
     {
-      "path": "./Server/org/apps/admin-dash"
+      "path": "./apps/domain-management-e2e"
+    },
+    {
+      "path": "./apps/domain-management"
     }
   ]
 }

@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "dev": "NODE_OPTIONS= npx nx run-many --target=serve --all --configuration=development",
+    "dev": "NODE_OPTIONS= NX_DAEMON=true npx nx run-many --target=serve --all --configuration=development",
     "auth-docs": "node apps/auth-service/src/swagger.js",
     "mode-dash": "npx nx run-many --target=dev --all --projects=mode-dash",
     "admin-dash": "npx nx run-many --target=dev --all --projects=admin-dash"

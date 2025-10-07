@@ -99,3 +99,18 @@ export const getReviews = async (params = {}) => {
   const response = await reviewApi.get('/reviews', { params });
   return response.data;
 };
+
+export const getCategories = async () => {
+  const response = await reviewApi.get('/categories');
+  return response.data;
+};
+
+export const createCategory = async (categoryData) => {
+  const response = await reviewApi.post('/categories', categoryData);
+  return response.data;
+};
+
+export const createSubCategory = async (categoryId, subCategoryData) => {
+  const response = await reviewApi.post(`/categories/${categoryId}/subcategories`, subCategoryData);
+  return response.data;
+};

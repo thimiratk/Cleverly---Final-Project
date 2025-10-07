@@ -1,9 +1,11 @@
-// API base configuration
-const API_BASE_URL = 'http://localhost:5000/api';
+// API Configuration
+const AUTH_API_BASE_URL = import.meta.env.VITE_AUTH_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6001.app.github.dev';
+const DOMAIN_API_BASE_URL = import.meta.env.VITE_DOMAIN_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6003.app.github.dev';
+const REVIEW_API_BASE_URL = import.meta.env.VITE_REVIEW_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6002.app.github.dev';
 
-// Generic API call function
+// Generic API call function (for admin dashboard endpoints)
 const apiCall = async (endpoint, options = {}) => {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${AUTH_API_BASE_URL}${endpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -13,12 +15,90 @@ const apiCall = async (endpoint, options = {}) => {
   };
 
   const response = await fetch(url, config);
-  
+
   if (!response.ok) {
     throw new Error(`API call failed: ${response.statusText}`);
   }
-  
+
+  // Handle 204 No Content responses (for delete operations)
+  if (response.status === 204) {
+    return null;
+  }
+
   return response.json();
+};
+
+// Domain API call function  
+const domainApiCall = async (endpoint, options = {}) => {
+  const url = `${DOMAIN_API_BASE_URL}${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  const response = await fetch(url, config);
+
+  if (!response.ok) {
+    throw new Error(`Domain API call failed: ${response.statusText}`);
+  }
+
+  // Handle 204 No Content responses (for delete operations)
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+};
+
+// Domain Management API calls
+export const domainAPI = {
+  // Categories
+  getCategories: () => domainApiCall('/api/categories'),
+  getCategoryById: (id) => domainApiCall(`/api/categories/${id}`),
+  
+  createCategory: (categoryData) =>
+    domainApiCall('/api/categories', {
+      method: 'POST',
+      body: JSON.stringify(categoryData),
+    }),
+
+  updateCategory: (id, categoryData) =>
+    domainApiCall(`/api/categories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
+    }),
+
+  deleteCategory: (id) =>
+    domainApiCall(`/api/categories/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // Subcategories
+  getSubCategories: () => domainApiCall('/api/subcategories'),
+  getSubCategoryById: (id) => domainApiCall(`/api/subcategories/${id}`),
+
+  getSubCategoriesByCategory: (categoryId) =>
+    domainApiCall(`/api/categories/${categoryId}/subcategories`),
+
+  createSubCategory: (subCategoryData) =>
+    domainApiCall('/api/subcategories', {
+      method: 'POST',
+      body: JSON.stringify(subCategoryData),
+    }),
+
+  updateSubCategory: (id, subCategoryData) =>
+    domainApiCall(`/api/subcategories/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(subCategoryData),
+    }),
+
+  deleteSubCategory: (id) =>
+    domainApiCall(`/api/subcategories/${id}`, {
+      method: 'DELETE',
+    }),
 };
 
 // Admin API calls
@@ -36,44 +116,29 @@ export const adminAPI = {
 
 // Reviews API calls
 export const reviewsAPI = {
-  getAll: () => apiCall('/reviews'),
+  getAll: () => domainApiCall('/api/reviews'),
   create: (reviewData) => 
-    apiCall('/reviews', {
+    domainApiCall('/api/reviews', {
       method: 'POST',
       body: JSON.stringify(reviewData),
     }),
   like: (reviewId) => 
-    apiCall(`/reviews/${reviewId}/like`, {
+    domainApiCall(`/api/reviews/${reviewId}/like`, {
       method: 'POST',
     }),
   comment: (reviewId, content) => 
-    apiCall(`/reviews/${reviewId}/comment`, {
+    domainApiCall(`/api/reviews/${reviewId}/comment`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
   update: (reviewId, reviewData) => 
-    apiCall(`/reviews/${reviewId}`, {
+    domainApiCall(`/api/reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify(reviewData),
     }),
   delete: (reviewId) => 
-    apiCall(`/reviews/${reviewId}`, {
+    domainApiCall(`/api/reviews/${reviewId}`, {
       method: 'DELETE',
-    }),
-};
-
-// Badges API calls
-export const badgesAPI = {
-  getAll: () => apiCall('/badges'),
-  create: (badgeData) => 
-    apiCall('/badges', {
-      method: 'POST',
-      body: JSON.stringify(badgeData),
-    }),
-  assign: (userId, badgeId) => 
-    apiCall('/badges/assign', {
-      method: 'POST',
-      body: JSON.stringify({ userId, badgeId }),
     }),
 };
 
@@ -89,6 +154,26 @@ export const usersAPI = {
   delete: (userId) => 
     apiCall(`/users/${userId}`, {
       method: 'DELETE',
+    }),
+};
+
+// Analytics API calls
+export const analyticsAPI = {
+  getStats: () => apiCall('/analytics'),
+};
+
+// Badges API calls
+export const badgesAPI = {
+  getAll: () => apiCall('/badges'),
+  create: (badgeData) => 
+    apiCall('/badges', {
+      method: 'POST',
+      body: JSON.stringify(badgeData),
+    }),
+  assign: (userId, badgeId) => 
+    apiCall('/badges/assign', {
+      method: 'POST',
+      body: JSON.stringify({ userId, badgeId }),
     }),
 };
 
@@ -119,9 +204,4 @@ export const settingsAPI = {
       method: 'PUT',
       body: JSON.stringify({ value }),
     }),
-};
-
-// Analytics API calls
-export const analyticsAPI = {
-  getStats: () => apiCall('/analytics'),
 };

@@ -5,6 +5,12 @@ import ReviewCard from "../components/ReviewCard";
 import CategoriesSection from "../components/CategoriesSection";
 import CreateReview from "../components/CreateReview";
 import { Link } from "react-router-dom";
+import aron from '../assets/aron.png';
+import selena from '../assets/selena.jpg';
+import profile from '../assets/profile.png';
+import macbook from '../assets/posts/MacBook.webp';
+import phone1 from '../assets/posts/phone1.jpg';
+import laptop from '../assets/posts/laptop.jpg';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -15,10 +21,10 @@ export default function Home() {
       id: 1,
       user: {
         name: "Alex Rodriguez",
-        avatar: "/src/assets/aron.png",
+        avatar: aron,
       },
       product: "MacBook Pro 16\"",
-      image: "/src/assets/posts/MacBook.webp",
+      image: macbook,
       rating: 4.8,
       time: "2h ago",
       description: "The new MacBook Pro is a powerhouse for professionals. The display is stunning and battery life is impressive.",
@@ -27,10 +33,10 @@ export default function Home() {
       id: 2,
       user: {
         name: "Sarah Chen",
-        avatar: "/src/assets/selena.jpg",
+        avatar: selena,
       },
       product: "iPhone 14 Pro",
-      image: "/src/assets/posts/phone1.jpg",
+      image: phone1,
       rating: 4.7,
       time: "4h ago",
       description: "Amazing camera and smooth performance. A bit pricey but worth it for Apple fans.",
@@ -39,10 +45,10 @@ export default function Home() {
       id: 3,
       user: {
         name: "John Smith",
-        avatar: "/src/assets/profile.png",
+        avatar: profile,
       },
       product: "Dell XPS 13",
-      image: "/src/assets/posts/laptop.jpg",
+      image: laptop,
       rating: 4.5,
       time: "6h ago",
       description: "Sleek design and great performance. Perfect for on-the-go productivity.",

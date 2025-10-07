@@ -1,0 +1,9 @@
+{
+  "name": "@org/domain-management",
+  "version": "0.0.1",
+  "main": "../../dist/apps/domain-management/main.js",
+  "private": true,
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

@@ -16,11 +16,19 @@ import proxy from 'express-http-proxy';
 
 const app = express();
 
+const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_DASH];
+
 app.use(cors({
-  origin:["https://animated-space-umbrella-g4x9q94q5gv53p47-5173.app.github.dev"],
-  allowedHeaders:["Authorization", "Content-Type"],
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
-}))
+}));
+
 
 app.use(morgan("dev"));
 app.use(express.json({limit:"100mb"}));
@@ -49,7 +57,6 @@ app.get('/gateway-health', (req, res) => {
   res.send({ message: 'Welcome to api-gateway!' });
 });
 
-// Proxy requests to the downstream service. Wrap proxy errors so they return 502
 // Route review requests to review service
 app.use("/reviews", proxy("http://localhost:6002", {
   proxyErrorHandler: (err, res, next) => {
@@ -60,7 +67,27 @@ app.use("/reviews", proxy("http://localhost:6002", {
   }
 }));
 
-// Route all other requests to auth service
+// Route auth requests to auth service (login, register, verify, etc.)
+app.use(["/login", "/register", "/verify", "/logout", "/refresh-token"], proxy("http://localhost:6001", {
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Auth service proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route domain management requests
+app.use("/domains", proxy("http://localhost:6003", {
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Domain management service proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route all other requests to auth service (fallback)
 app.use("/", proxy("http://localhost:6001", {
   proxyErrorHandler: (err, res, next) => {
     console.error('Auth service proxy error:', err);

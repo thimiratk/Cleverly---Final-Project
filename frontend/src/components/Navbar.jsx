@@ -5,6 +5,7 @@ import { useUser } from "../hooks/useUser";
 import { useQueryClient } from "@tanstack/react-query";
 import API from "../services/api";
 import CreateReview from "./CreateReview/";
+import logo from "../assets/logo.jpeg";
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,9 +61,7 @@ export default function Navbar() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-purple-600 to-purple-700 rounded-xl flex items-center justify-center shadow-md group-hover:shadow-lg transition-all">
-                <span className="text-white font-bold text-base">C</span>
-              </div>
+              <img src={logo} alt="Cleverly" className="w-9 h-9 rounded-xl object-cover shadow-md group-hover:shadow-lg transition-all" />
               <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:block">
                 Cleverly
               </span>
