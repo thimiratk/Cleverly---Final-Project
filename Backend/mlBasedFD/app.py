@@ -10,7 +10,7 @@ fraud_model = FraudModel()
 class Review(BaseModel):
     text: str
 
-@app.post("/detect")
+@app.post("/detection")
 def detect_fraud(review: Review):
     label = fraud_model.predict(review.text)
     return {"review": review.text, "label": label}

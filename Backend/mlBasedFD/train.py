@@ -37,3 +37,9 @@ print(classification_report(y_test, y_pred))
 # Save model
 joblib.dump(model, "models/fraud_model.pkl")
 print(" Model saved to models/fraud_model.pkl")
+
+# --- Sample Prediction ---
+sample_review = "This product is amazing, I highly recommend it!"
+prediction = model.predict([sample_review])[0]
+print(f"\nSample Review: {sample_review}")
+print(f"Predicted Label: {prediction}")

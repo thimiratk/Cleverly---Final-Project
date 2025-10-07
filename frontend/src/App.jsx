@@ -8,6 +8,10 @@ import Reviews from "./pages/Reviews";
 import { AuthProvider } from "./context/AuthContext";
 import ProfilePage from "./pages/Profile";
 import CreateReview from "./pages/WriteReview";
+import React, { useEffect, useState } from 'react'
+import axios from 'axios'
+import { PieChart, Pie, Cell, Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from 'recharts'
+import ReviewForm from './components/ReviewForm'
 
 export default function App() {
   return (
