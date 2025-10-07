@@ -35,24 +35,10 @@ export default function Navbar() {
     <>
       {/* Create Review Modal - positioned at root level */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-[2000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="relative w-[90%] max-w-2xl mx-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-h-[90vh] overflow-y-auto">
-              {/* Close Button */}
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="absolute top-4 right-4 z-10 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded-full p-2 shadow-lg"
-              >
-                ✕
-              </button>
-
-              {/* Review Form */}
-              <div className="p-6">
-                <CreateReview onReviewCreated={() => setIsModalOpen(false)} />
-              </div>
-            </div>
-          </div>
-        </div>
+        <CreateReview 
+          onClose={() => setIsModalOpen(false)} 
+          onReviewCreated={() => setIsModalOpen(false)} 
+        />
       )}
 
       {/* Desktop/Tablet Top Navbar - MODERN DESIGN */}

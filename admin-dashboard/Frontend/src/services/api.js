@@ -53,6 +53,31 @@ const domainApiCall = async (endpoint, options = {}) => {
   return response.json();
 };
 
+// Review API call function
+const reviewApiCall = async (endpoint, options = {}) => {
+  const url = `${REVIEW_API_BASE_URL}${endpoint}`;
+  const config = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    ...options,
+  };
+
+  const response = await fetch(url, config);
+
+  if (!response.ok) {
+    throw new Error(`Review API call failed: ${response.statusText}`);
+  }
+
+  // Handle 204 No Content responses
+  if (response.status === 204) {
+    return null;
+  }
+
+  return response.json();
+};
+
 // Domain Management API calls
 export const domainAPI = {
   // Categories
@@ -116,29 +141,36 @@ export const adminAPI = {
 
 // Reviews API calls
 export const reviewsAPI = {
-  getAll: () => domainApiCall('/api/reviews'),
+  getAll: () => reviewApiCall('/reviews'),
   create: (reviewData) => 
-    domainApiCall('/api/reviews', {
+    reviewApiCall('/reviews', {
       method: 'POST',
       body: JSON.stringify(reviewData),
     }),
   like: (reviewId) => 
-    domainApiCall(`/api/reviews/${reviewId}/like`, {
+    reviewApiCall(`/reviews/${reviewId}/like`, {
       method: 'POST',
     }),
   comment: (reviewId, content) => 
-    domainApiCall(`/api/reviews/${reviewId}/comment`, {
+    reviewApiCall(`/reviews/${reviewId}/comment`, {
       method: 'POST',
       body: JSON.stringify({ content }),
     }),
   update: (reviewId, reviewData) => 
-    domainApiCall(`/api/reviews/${reviewId}`, {
+    reviewApiCall(`/reviews/${reviewId}`, {
       method: 'PUT',
       body: JSON.stringify(reviewData),
     }),
   delete: (reviewId) => 
-    domainApiCall(`/api/reviews/${reviewId}`, {
+    reviewApiCall(`/reviews/${reviewId}`, {
       method: 'DELETE',
+    }),
+  // New exceptional reviews endpoints
+  getExceptional: () => reviewApiCall('/reviews/exceptional'),
+  convertExceptional: (reviewId, categoryData) => 
+    reviewApiCall(`/reviews/exceptional/${reviewId}/convert`, {
+      method: 'PUT',
+      body: JSON.stringify(categoryData),
     }),
 };
 

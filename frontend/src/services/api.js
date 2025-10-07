@@ -81,7 +81,13 @@ export default API;
 
 // Review API functions
 const reviewApi = axios.create({
-  baseURL: import.meta.env.VITE_REVIEW_SERVER_URL || "http://localhost:6002",
+  baseURL: import.meta.env.VITE_REVIEW_SERVER_URL || "https://animated-space-umbrella-g4x9q94q5gv53p47-6002.app.github.dev",
+  withCredentials: true,
+});
+
+// Domain API functions (for categories and subcategories)
+const domainApi = axios.create({
+  baseURL: import.meta.env.VITE_DOMAIN_SERVER_URL || "https://animated-space-umbrella-g4x9q94q5gv53p47-6003.app.github.dev",
   withCredentials: true,
 });
 
@@ -100,17 +106,28 @@ export const getReviews = async (params = {}) => {
   return response.data;
 };
 
+// Category functions - now using domain service
 export const getCategories = async () => {
-  const response = await reviewApi.get('/categories');
+  const response = await domainApi.get('/api/categories');
   return response.data;
 };
 
 export const createCategory = async (categoryData) => {
-  const response = await reviewApi.post('/categories', categoryData);
+  const response = await domainApi.post('/api/categories', categoryData);
   return response.data;
 };
 
-export const createSubCategory = async (categoryId, subCategoryData) => {
-  const response = await reviewApi.post(`/categories/${categoryId}/subcategories`, subCategoryData);
+export const getSubCategories = async () => {
+  const response = await domainApi.get('/api/subcategories');
+  return response.data;
+};
+
+export const getSubCategoriesByCategory = async (categoryId) => {
+  const response = await domainApi.get(`/api/categories/${categoryId}/subcategories`);
+  return response.data;
+};
+
+export const createSubCategory = async (subCategoryData) => {
+  const response = await domainApi.post('/api/subcategories', subCategoryData);
   return response.data;
 };

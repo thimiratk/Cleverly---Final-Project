@@ -53,10 +53,18 @@ model subCategories {
 
 model reviews {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  categoryId String @db.ObjectId
-  category categories @relation(fields: [categoryId], references: [id])
+  
+  // Standard category references
+  categoryId String? @db.ObjectId
+  category categories? @relation(fields: [categoryId], references: [id])
   subCategoryId String? @db.ObjectId
   subCategory subCategories? @relation(fields: [subCategoryId], references: [id])
+  
+  // Exceptional category fields for custom user input
+  exceptionalCategory String?
+  exceptionalSubCategory String?
+  isExceptional Boolean @default(false)
+  
   productOrService String
   product String
   rating Int

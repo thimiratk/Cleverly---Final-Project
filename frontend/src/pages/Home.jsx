@@ -136,22 +136,10 @@ export default function Home() {
 
           {/* Create Review Modal */}
           {isModalOpen && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/40">
-              <div className="relative w-[90%] max-w-lg">
-                <div className="bg-white rounded-2xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto">
-                  {/* Close Button */}
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 transition"
-                  >
-                    ✕
-                  </button>
-
-                  {/* Review Form */}
-                  <CreateReview onReviewCreated={() => setIsModalOpen(false)} />
-                </div>
-              </div>
-            </div>
+            <CreateReview 
+              onClose={() => setIsModalOpen(false)} 
+              onReviewCreated={() => setIsModalOpen(false)} 
+            />
           )}
         </div>
 
