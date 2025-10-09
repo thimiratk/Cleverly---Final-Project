@@ -1,14 +1,20 @@
 # Cleverly API Gateway
 
-This API gateway uses Nginx as a reverse proxy to route requests to different microservices.
+> **⚠️ CURRENT SETUP: Running WITHOUT Docker**  
+> Docker files have been moved to `.backup` - See [FILE-ORGANIZATION.md](FILE-ORGANIZATION.md) for details.  
+> For quick start guide, see [QUICKSTART-NO-DOCKER.md](QUICKSTART-NO-DOCKER.md)
+
+This API gateway provides access to multiple fraud detection and sentiment analysis services.
 
 ## Architecture
 
 ```
-Client → Nginx Gateway (Port 80) → Backend Services
-                                  ├─ Rule-based Fraud Detection (Port 8001)
-                                  ├─ ML-based Fraud Detection (Port 8002)
-                                  └─ Sentiment Analysis (Port 8003)
+Client → Backend Services (Direct Access)
+       ├─ Rule-based Fraud Detection (Port 8001)
+       ├─ ML-based Fraud Detection (Port 8002)
+       └─ Sentiment Analysis (Port 8003)
+
+Optional: Nginx Gateway (Port 80) can be added for unified routing
 ```
 
 ## Available Endpoints
@@ -27,27 +33,65 @@ Client → Nginx Gateway (Port 80) → Backend Services
 - `GET /` - API gateway information and available endpoints
 - `GET /health` - Health check
 
-## Setup Options
+## 🚀 Quick Start (No Docker Required)
 
-### Option 1: Using Docker Compose (Recommended)
+### Prerequisites
+- Python 3.11+ installed
+- All dependencies installed (see setup below)
 
-1. **Prerequisites:**
-   - Install Docker Desktop for Windows
-   - Ensure Docker is running
+### Start All Services
 
-2. **Build and start all services:**
-   ```powershell
-   cd api-gateway
-   docker-compose up --build
-   ```
+```powershell
+cd Backendnew\api-gateway
+.\start-services-local.ps1
+```
 
-3. **Access the gateway:**
-   - Gateway URL: http://localhost
+This will start three PowerShell windows, one for each service:
+- **Rule-based Fraud Detection** on port 8001
+- **ML-based Fraud Detection** on port 8002
+- **Sentiment Analysis** on port 8003
 
-4. **Stop services:**
-   ```powershell
-   docker-compose down
-   ```
+### Access the Services
+
+Open your browser and go to:
+- http://localhost:8001/docs (Rule-based Fraud Detection API)
+- http://localhost:8002/docs (ML-based Fraud Detection API)
+- http://localhost:8003/docs (Sentiment Analysis API)
+
+### Stop Services
+
+```powershell
+.\stop-services-local.ps1
+```
+
+Or simply close the PowerShell windows.
+
+---
+
+## 📦 First-Time Setup
+
+If you haven't installed dependencies yet:
+
+```powershell
+# Install Rule-based Fraud Detection dependencies
+cd Backendnew\ruleBasedFD
+pip install fastapi uvicorn pydantic
+
+# Install ML-based Fraud Detection dependencies
+cd ..\mlBasedFD
+pip install -r requirements.txt
+
+# Install Sentiment Analysis dependencies
+cd ..\Sentiment-Analysis-Service
+pip install -r requirements.txt
+```
+
+---
+
+## 🐳 Docker Setup (Not Currently Active)
+
+Docker configuration files have been renamed to `.backup` extension.  
+To restore Docker setup, see [FILE-ORGANIZATION.md](FILE-ORGANIZATION.md)
 
 ### Option 2: Manual Setup with Nginx on Windows
 

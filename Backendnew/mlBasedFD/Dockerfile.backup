@@ -2,9 +2,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
+# Upgrade pip and install wheel
+RUN pip install --upgrade pip setuptools wheel
+
 # Copy requirements and install dependencies
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir \
+    --default-timeout=300 \
+    --retries=5 \
+    -r requirements.txt
 
 # Copy application files
 COPY . .
