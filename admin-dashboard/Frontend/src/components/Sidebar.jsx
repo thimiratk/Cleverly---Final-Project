@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Home, Users, FileText, BarChart3, Menu, X, Shield, Award, Star, TrendingUp, AlertTriangle, CheckCircle, Globe } from 'lucide-react';
+import { Home, Users, FileText, BarChart3, Menu, X, Shield, Award, Star, TrendingUp, AlertTriangle, CheckCircle, Globe, Tags } from 'lucide-react';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection }) => {
   const menuItems = [
@@ -11,7 +11,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection 
     { id: 'moderator', label: 'Moderator Hub', icon: Users, path: '/moderator' },
     { id: 'report', label: 'Report Management', icon: FileText, path: '/report' },
     { id: 'analytics', label: 'Trust Analytics', icon: BarChart3, path: '/analytics' },
-    { id: 'domain-management', label: 'Domain Management', icon: Globe, path: '/domain-management' }
+    { id: 'domain-management', label: 'Domain Management', icon: Globe, path: '/domain-management' },
+    { id: 'exceptional-reviews', label: 'Exceptional Categories', icon: Tags, path: '/exceptional-reviews' }
   ];
 
   return (

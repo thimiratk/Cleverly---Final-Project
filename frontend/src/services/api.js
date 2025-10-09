@@ -81,13 +81,13 @@ export default API;
 
 // Review API functions
 const reviewApi = axios.create({
-  baseURL: import.meta.env.VITE_REVIEW_SERVER_URL || "https://animated-space-umbrella-g4x9q94q5gv53p47-6002.app.github.dev",
+  baseURL: import.meta.env.VITE_REVIEW_SERVER_URL || "http://localhost:6004",
   withCredentials: true,
 });
 
 // Domain API functions (for categories and subcategories)
 const domainApi = axios.create({
-  baseURL: import.meta.env.VITE_DOMAIN_SERVER_URL || "https://animated-space-umbrella-g4x9q94q5gv53p47-6003.app.github.dev",
+  baseURL: import.meta.env.VITE_DOMAIN_SERVER_URL || "http://localhost:6003",
   withCredentials: true,
 });
 

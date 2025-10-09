@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
-import { domainAPI } from "../services/api";
+import { domainAPI, reviewsAPI } from "../services/api";
 import {
   FolderTree,
   Plus,
@@ -13,7 +13,10 @@ import {
   X,
   Save,
   AlertCircle,
+  Bell,
+  ExternalLink,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const DomainManagement = () => {
   const [categories, setCategories] = useState([]);
@@ -21,6 +24,7 @@ const DomainManagement = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [exceptionalReviewsCount, setExceptionalReviewsCount] = useState(0);
 
   // Modal states
   const [showModal, setShowModal] = useState(false);
@@ -35,7 +39,17 @@ const DomainManagement = () => {
   // Fetch categories and their subcategories on load
   useEffect(() => {
     fetchCategories();
+    fetchExceptionalReviewsCount();
   }, []);
+
+  const fetchExceptionalReviewsCount = async () => {
+    try {
+      const reviews = await reviewsAPI.getExceptionalReviews();
+      setExceptionalReviewsCount(reviews.length);
+    } catch (err) {
+      console.warn("Failed to fetch exceptional reviews count:", err);
+    }
+  };
 
   const fetchCategories = async () => {
     try {
@@ -240,6 +254,34 @@ const DomainManagement = () => {
             <span>Add Category</span>
           </button>
         </div>
+
+        {/* Exceptional Reviews Notification */}
+        {exceptionalReviewsCount > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-amber-100 rounded-full">
+                  <Bell size={16} className="text-amber-600" />
+                </div>
+                <div>
+                  <h4 className="text-amber-800 font-medium">
+                    New Exceptional Categories Pending
+                  </h4>
+                  <p className="text-amber-700 text-sm">
+                    {exceptionalReviewsCount} review{exceptionalReviewsCount > 1 ? 's' : ''} contain{exceptionalReviewsCount === 1 ? 's' : ''} user-created categories that need admin review
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/exceptional-reviews"
+                className="bg-amber-600 hover:bg-amber-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-colors"
+              >
+                <span>Review Now</span>
+                <ExternalLink size={16} />
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Success Message */}
         {success && (

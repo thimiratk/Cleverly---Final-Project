@@ -11,7 +11,7 @@ import {
   createSubCategory,
   updateSubCategory,
   deleteSubCategory,
-} from '../controllers/domain.controller.js';
+} from '../controllers/domain.controller';
 
 const router = express.Router();
 

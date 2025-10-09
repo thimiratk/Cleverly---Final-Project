@@ -1,7 +1,7 @@
 // API Configuration
-const AUTH_API_BASE_URL = import.meta.env.VITE_AUTH_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6001.app.github.dev';
-const DOMAIN_API_BASE_URL = import.meta.env.VITE_DOMAIN_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6003.app.github.dev';
-const REVIEW_API_BASE_URL = import.meta.env.VITE_REVIEW_API_BASE_URL || 'https://animated-space-umbrella-g4x9q94q5gv53p47-6002.app.github.dev';
+const AUTH_API_BASE_URL = import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:6001';
+const DOMAIN_API_BASE_URL = import.meta.env.VITE_DOMAIN_API_BASE_URL || 'http://localhost:6003';
+const REVIEW_API_BASE_URL = import.meta.env.VITE_REVIEW_API_BASE_URL || 'http://localhost:6002';
 
 // Generic API call function (for admin dashboard endpoints)
 const apiCall = async (endpoint, options = {}) => {
@@ -166,11 +166,23 @@ export const reviewsAPI = {
       method: 'DELETE',
     }),
   // New exceptional reviews endpoints
+  getExceptionalReviews: () => reviewApiCall('/reviews/exceptional'),
   getExceptional: () => reviewApiCall('/reviews/exceptional'),
+  getAdminStats: () => reviewApiCall('/reviews/admin/stats'),
   convertExceptional: (reviewId, categoryData) => 
     reviewApiCall(`/reviews/exceptional/${reviewId}/convert`, {
       method: 'PUT',
       body: JSON.stringify(categoryData),
+    }),
+  createCategoryFromExceptional: (reviewId, categoryName) =>
+    reviewApiCall(`/reviews/exceptional/${reviewId}/create-category`, {
+      method: 'POST',
+      body: JSON.stringify({ categoryName }),
+    }),
+  createSubCategoryFromExceptional: (reviewId, subcategoryName, categoryId) =>
+    reviewApiCall(`/reviews/exceptional/${reviewId}/create-subcategory`, {
+      method: 'POST',
+      body: JSON.stringify({ subcategoryName, categoryId }),
     }),
 };
 
