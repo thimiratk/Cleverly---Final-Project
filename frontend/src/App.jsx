@@ -13,6 +13,8 @@ import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 
+
+import NotFound from "./pages/404Page";
 import { AuthProvider } from "./context/AuthContext";
 
 import LoadingScreen from "./pages/LoadingScreen";
@@ -49,11 +51,11 @@ function AppContent() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
-        
         <Route path="/trendings" element={<Trendings />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/profile" element={<Profile />} />
-        
+        {/* 404 Not Found Route */}
+        <Route path="404" element={<NotFound />} />
       </Routes>
     </>
   );
