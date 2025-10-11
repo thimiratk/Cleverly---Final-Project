@@ -41,7 +41,9 @@
         "apps/auth-service-e2e/**/*",
         "apps/api-gateway-e2e/**/*",
         "apps/review-service-e2e/**/*",
-        "apps/domain-management-e2e/**/*"
+        "apps/domain-management-e2e/**/*",
+        "apps/user-profile-e2e/**/*",
+        "apps/user-interactions-e2e/**/*"
       ]
     },
     {
@@ -77,11 +79,18 @@
   "targetDefaults": {
     "@nx/esbuild:esbuild": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": [
+        "^build"
+      ]
     }
   },
   "generators": {

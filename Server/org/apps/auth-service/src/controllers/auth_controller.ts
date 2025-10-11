@@ -108,9 +108,10 @@ const refreshToken = jwt.sign(
         setCookie(res, 'accessToken', accessToken);
 
         res.status(200).json({ 
-           
             message: "Login successful",
-            user:{id:user.id,email:user.email,name:user.name} });
+            user: { id: user.id, email: user.email, name: user.name },
+            accessToken: accessToken // Include token in response for cross-origin access
+        });
     } catch (error) {
         return next(error);
     }
@@ -207,19 +208,36 @@ export const refreshToken = async (req:Request,res:Response,next:NextFunction)=>
     }
 }   
 
-export const getUser = async (req: any, res: Response, next: NextFunction) => {
+export const getUser = async (req: any, res: Response, next: NextFunction): Promise<Response | void> => {
   try {
     if (!req.user) {
       return res.status(401).json({ success: false, message: "Not authenticated" });
     }
 
+    // Fetch complete user data including profile picture
+    const fullUser = await prisma.users.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        profilePicture: true,
+        coverPicture: true,
+        bio: true,
+        trustScore: true,
+        followersCount: true,
+        followingCount: true,
+        createdAt: true,
+      }
+    });
+
+    if (!fullUser) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
     res.status(200).json({
       success: true,
-      user: {
-        id: req.user.id,
-        email: req.user.email,
-        name: req.user.name,
-      },
+      user: fullUser,
     });
   } catch (error) {
     console.error("Error in getUser controller:", error);

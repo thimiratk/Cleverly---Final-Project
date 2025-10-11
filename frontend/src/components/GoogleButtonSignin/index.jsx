@@ -2,7 +2,7 @@ import * as React from "react";
 
 const GoogleButton = () => {
   const handleGoogleSignIn = () => {
-    window.location.href = `${import.meta.env.VITE_SERVER_URL || "http://localhost:6001"}/auth/google`;
+    window.location.href = `${import.meta.env.VITE_API_GATEWAY_URL || "http://localhost:8080/api"}/auth/google`;
   };
 
   return (

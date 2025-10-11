@@ -1,374 +1,350 @@
-import React, { useState } from "react";
-import { MapPin, Calendar, Link, Settings, Star, Trophy } from "lucide-react";
-import { Button, Badge, Card, CardContent, Avatar, AvatarImage, AvatarFallback, Progress,Tabs,TabsList,TabsTrigger,TabsContent,formatNumber,COMMON_STYLES
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import {
+  MapPin,
+  Calendar,
+  Star,
+  UserPlus,
+  UserMinus,
+  MessageCircle,
+  Settings,
+} from "lucide-react";
+import {
+  Button,
+  Card,
+  CardContent,
 } from "../components/ui/UIComponents";
 import ProfileEditModal from "./ProfileEditModal";
+import ReviewCard from "../components/ReviewCard";
+import { userProfileService } from "../services/userProfile.service";
+import { reviewService } from "../services/review.service";
+import { useAuth } from "../context/AuthContext";
 
-const ProfilePage = () => {
-  const [viewMode] = useState("");
+const Profile = () => {
+  const { userId } = useParams();
+  const { user: currentUser } = useAuth();
+
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [userReviews, setUserReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const isOwnProfile = !userId || userId === currentUser?.id;
 
   const [userData, setUserData] = useState({
-    name: "Sarah Johnson",
-    username: "sarahj_reviews",
-    email: "sarah@example.com",
-    bio: "Tech enthusiast and product reviewer. Love exploring new gadgets!",
-    job: "Senior Product Manager",
-    location: "San Francisco, CA",
-    website: "techreviews.blog",
-    avatar: "",
-    followers: 1205,
-    trustScore: 87,
-    badges: ["verified", "expert", "trendsetter"],
+    id: "",
+    username: "",
+    firstName: "",
+    lastName: "",
+    name: "",
+    email: "",
+    bio: "",
+    profilePicture: "",
+    coverPicture: "",
+    trustScore: 0,
+    followersCount: 0,
+    followingCount: 0,
+    badges: [],
+    isFollowing: false,
   });
 
-  const profileStats = {
-    totalReviews: 189,
-    totalLikes: 12847,
-    averageRating: 4.2,
-    topCategory: "Technology",
-    joinDate: "March 2023",
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        console.log('Profile component - userId from params:', userId);
+        console.log('Profile component - currentUser:', currentUser);
+        console.log('Profile component - isOwnProfile:', isOwnProfile);
+
+        const profileData = isOwnProfile
+          ? await userProfileService.getCurrentUserProfile()
+          : await userProfileService.getUserProfile(userId);
+
+        console.log('Profile component - fetched profileData:', profileData);
+        console.log('Profile component - createdAt from backend:', profileData.createdAt);
+        console.log('Profile component - name:', profileData.name);
+        console.log('Profile component - firstName:', profileData.firstName);
+        console.log('Profile component - lastName:', profileData.lastName);
+        console.log('Profile component - username:', profileData.username);
+
+        const mappedUserData = {
+          id: profileData.id,
+          username: profileData.username,
+          firstName: profileData.firstName,
+          lastName: profileData.lastName,
+          displayName:
+            profileData.firstName && profileData.lastName
+              ? `${profileData.firstName} ${profileData.lastName}`
+              : profileData.firstName ||
+                profileData.lastName ||
+                profileData.name ||
+                profileData.username ||
+                "Anonymous User",
+          email: profileData.email,
+          bio: profileData.bio || "",
+          profilePicture: profileData.profilePicture || "",
+          coverPicture: profileData.coverPicture || "",
+          trustScore: profileData.trustScore || 0,
+          followersCount: profileData.followersCount || 0,
+          followingCount: profileData.followingCount || 0,
+          badges: profileData.badges || [],
+          isFollowing: profileData.isFollowing || false,
+          createdAt: profileData.createdAt,
+        };
+
+        console.log('Profile component - mapped userData:', mappedUserData);
+        console.log('Profile component - final displayName:', mappedUserData.displayName);
+        setUserData(mappedUserData);
+        await fetchUserReviews(profileData.id);
+      } catch (err) {
+        console.error('Profile component - error:', err);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentUser) fetchProfileData();
+  }, [userId, currentUser, isOwnProfile]);
+
+  const fetchUserReviews = async (profileUserId) => {
+    try {
+      setReviewsLoading(true);
+      console.log('Fetching reviews for user ID:', profileUserId);
+      
+      // Use the profile user's ID to filter reviews
+      const reviews = await reviewService.getUserReviews(profileUserId);
+      console.log('Fetched reviews:', reviews);
+      
+      setUserReviews(reviews);
+    } catch (error) {
+      console.error('Error fetching user reviews:', error);
+      setUserReviews([]);
+    } finally {
+      setReviewsLoading(false);
+    }
   };
 
-  const badgeDetails = {
-    verified: {
-      name: "Verified Reviewer",
-      color: "bg-blue-100 text-blue-700",
-      icon: "✓",
-    },
-    expert: {
-      name: "Expert Reviewer",
-      color: "bg-purple-100 text-purple-700",
-      icon: "🎯",
-    },
-    trendsetter: {
-      name: "Trendsetter",
-      color: "bg-pink-100 text-pink-700",
-      icon: "🔥",
-    },
+  const handleFollowToggle = async () => {
+    try {
+      if (userData.isFollowing) {
+        await userProfileService.unfollowUser(userId);
+        setUserData((prev) => ({
+          ...prev,
+          isFollowing: false,
+          followersCount: prev.followersCount - 1,
+        }));
+      } else {
+        await userProfileService.followUser(userId);
+        setUserData((prev) => ({
+          ...prev,
+          isFollowing: true,
+          followersCount: prev.followersCount + 1,
+        }));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
-
-  const userReviews = [
-    {
-      id: "1",
-      product: "iPhone 15 Pro",
-      rating: 5,
-      title: "Incredible camera upgrade, but battery life could be better",
-      image: "https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=300&h=300&fit=crop",
-      likes: 124,
-      comments: 18,
-      timestamp: "2 days ago",
-    },
-    {
-      id: "2",
-      product: "MacBook Pro M3",
-      rating: 4,
-      title: "Powerful performance, worth the upgrade from M1",
-      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop",
-      likes: 89,
-      comments: 12,
-      timestamp: "1 week ago",
-    },
-    {
-      id: "3",
-      product: "AirPods Pro 2",
-      rating: 5,
-      title: "Best noise cancellation I've ever experienced",
-      image: "https://images.unsplash.com/photo-1606220945770-b5b6c2c55bf1?w=300&h=300&fit=crop",
-      likes: 156,
-      comments: 24,
-      timestamp: "2 weeks ago",
-    },
-  ];
-
-  const achievements = [
-    {
-      name: "First Review",
-      description: "Posted your first review",
-      earned: true,
-    },
-    {
-      name: "Popular Reviewer",
-      description: "Got 1000+ likes on reviews",
-      earned: true,
-    },
-    {
-      name: "Category Expert",
-      description: "Became an expert in Technology",
-      earned: true,
-    },
-    {
-      name: "Trend Spotter",
-      description: "Reviewed 5 trending products first",
-      earned: false,
-    },
-  ];
 
   const handleEditProfile = () => setIsEditModalOpen(true);
+  const handleCloseEditModal = () => setIsEditModalOpen(false);
 
-  const handleSaveProfile = (updatedData) => {
-    setUserData((prev) => ({
-      ...prev,
-      ...updatedData.profile,
-      avatar: updatedData.profile.profileImage || prev.avatar,
-      email: updatedData.account.email,
-    }));
-    alert("Profile updated successfully!");
+  // Format the join date
+  const formatJoinDate = (dateString) => {
+    if (!dateString) return 'Recently';
+    
+    try {
+      const date = new Date(dateString);
+      const options = { year: 'numeric', month: 'long' };
+      return `Joined ${date.toLocaleDateString('en-US', options)}`;
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Recently';
+    }
   };
 
-  const onReviewClick = (id) => console.log("Review clicked:", id);
-
   return (
-    <div className="relative min-h-screen bg-gray-50">
-      <div
-        className={`transition-all duration-300 ${
-          isEditModalOpen ? "blur-sm brightness-50 pointer-events-none" : ""
-        }`}
-      >
-        <div className="max-w-4xl mx-auto px-4 py-25">
-          {/* Profile Header */}
-          <div className={`${COMMON_STYLES.gradientHeader} rounded-2xl p-6 text-white mb-6`}>
-            <div className="flex items-start justify-between">
-              <div className="flex items-center gap-4">
-                <Avatar className="w-20 h-20 border-4 border-white">
-                  {userData.avatar ? (
-                    <AvatarImage src={userData.avatar} alt={userData.name} />
-                  ) : (
-                    <AvatarFallback className="text-2xl">
-                      {userData.name.charAt(0)}
-                    </AvatarFallback>
-                  )}
-                </Avatar>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100 pb-12">
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-500 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-2xl font-bold text-gray-800 mb-2">Profile Not Found</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.history.back()}
+              className="px-6 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-5xl mx-auto">
+        {/* --- Cover Section --- */}
+        <div className="relative h-60 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-b-3xl overflow-hidden shadow-md">
+          {userData.coverPicture && (
+            <img
+              src={userData.coverPicture}
+              alt="Cover"
+              className="w-full h-full object-cover opacity-80"
+            />
+          )}
+        </div>
 
-                <div>
-                  <h1 className="text-2xl font-bold">{userData.name}</h1>
-                  <p className="text-blue-100">{userData.email}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="w-4 h-4" />
-                      {userData.location}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      Joined {profileStats.joinDate}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Link className="w-4 h-4" />
-                      {userData.website}
-                    </span>
+        {/* --- Profile Card --- */}
+        <Card className="relative -mt-20 mx-4 sm:mx-0 bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="flex items-center gap-6">
+              <div className="w-32 h-32 rounded-full border-4 border-white shadow-md overflow-hidden bg-gray-100">
+                {userData.profilePicture ? (
+                  <img
+                    src={userData.profilePicture}
+                    alt={userData.displayName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-5xl font-semibold text-gray-500">
+                    {userData.displayName.charAt(0)}
                   </div>
-                </div>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={handleEditProfile}>
-                  <Settings className="w-4 h-4 mr-2" />
-                  Edit
-                </Button>
+
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {userData.displayName}
+                </h1>
+                <p className="text-gray-600">@{userData.username}</p>
+                <div className="flex gap-4 mt-3 text-gray-500 text-sm">
+                  <span className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-500" />
+                    {userData.trustScore}% Trust
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Calendar className="w-4 h-4" />
+                    {formatJoinDate(userData.createdAt)}
+                  </span>
+                </div>
               </div>
             </div>
-            {userData.bio && (
-              <p className="mt-4 text-blue-100 text-sm">{userData.bio}</p>
-            )}
-          </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-blue-600">
-                  {profileStats.totalReviews}
-                </div>
-                <div className="text-sm text-gray-500">Reviews</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {formatNumber(userData.followers)}
-                </div>
-                <div className="text-sm text-gray-500">Followers</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-purple-600">
-                  {formatNumber(profileStats.totalLikes)}
-                </div>
-                <div className="text-sm text-gray-500">Likes</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 text-center">
-                <div className="text-2xl font-bold text-yellow-600">
-                  {profileStats.averageRating}
-                </div>
-                <div className="text-sm text-gray-500">Avg Rating</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Trust Score & Badges */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" /> Trust Score
-                </h3>
-                <div className="text-3xl font-bold text-center mb-2">
-                  {userData.trustScore}%
-                </div>
-                <Progress value={userData.trustScore} className="mb-4" />
-                <p className="text-sm text-gray-500 text-center">
-                  Excellent reviewer with high community trust
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-6">
-                <h3 className="font-semibold mb-4">Badges</h3>
-                <div className="flex flex-wrap gap-2">
-                  {userData.badges.map((badge) => {
-                    const info = badgeDetails[badge];
-                    return info ? (
-                      <Badge key={badge} className={`${info.color} border-0`}>
-                        <span className="mr-1">{info.icon}</span>
-                        {info.name}
-                      </Badge>
-                    ) : null;
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Tabs */}
-          <Tabs defaultValue="reviews" className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="achievements">Achievements</TabsTrigger>
-              <TabsTrigger value="following">Following</TabsTrigger>
-            </TabsList>
-
-            {/* Reviews */}
-            <TabsContent value="reviews">
-              <div
-                className={`grid gap-4 ${
-                  viewMode === "grid"
-                    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-                    : "grid-cols-1"
-                }`}
-              >
-                {userReviews.map((review) => (
-                  <Card
-                    key={review.id}
-                    className="cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => onReviewClick(review.id)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-center gap-3 mb-3">
-                        <img
-                          src={review.image}
-                          alt={review.product}
-                          className="w-12 h-12 rounded-lg object-cover"
-                        />
-                        <div className="flex-1">
-                          <h3 className="font-medium text-sm">
-                            {review.product}
-                          </h3>
-                          <div className="flex items-center gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-3 h-3 ${
-                                  star <= review.rating
-                                    ? "fill-yellow-400 text-yellow-400"
-                                    : "text-gray-300"
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-gray-700 line-clamp-2 mb-3">
-                        {review.title}
-                      </p>
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{review.timestamp}</span>
-                        <div className="flex gap-3">
-                          <span>{review.likes} likes</span>
-                          <span>{review.comments} comments</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* Achievements */}
-            <TabsContent value="achievements">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {achievements.map((a) => (
-                  <Card
-                    key={a.name}
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              {isOwnProfile ? (
+                <Button
+                  onClick={handleEditProfile}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg flex items-center gap-2"
+                >
+                  <Settings className="w-4 h-4" /> Edit Profile
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    onClick={handleFollowToggle}
                     className={`${
-                      a.earned
-                        ? "bg-white border-gray-200"
-                        : "bg-gray-50 border-gray-200 opacity-60"
-                    } shadow-sm`}
+                      userData.isFollowing
+                        ? "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                        : "bg-blue-600 hover:bg-blue-700 text-white"
+                    } px-6 rounded-lg flex items-center gap-2`}
                   >
-                    <CardContent className="p-6">
-                      <div className="flex items-center gap-4">
-                        <div
-                          className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                            a.earned ? "bg-green-100" : "bg-gray-200"
-                          }`}
-                        >
-                          <Trophy
-                            className={`w-6 h-6 ${
-                              a.earned ? "text-green-600" : "text-gray-400"
-                            }`}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900 mb-1">
-                            {a.name}
-                          </h3>
-                          <p className="text-gray-600 text-sm">
-                            {a.description}
-                          </p>
-                        </div>
-                        {a.earned && (
-                          <Badge className="bg-gray-100 text-gray-700 border-0 font-medium">
-                            Earned
-                          </Badge>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
+                    {userData.isFollowing ? (
+                      <>
+                        <UserMinus className="w-4 h-4" /> Following
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" /> Follow
+                      </>
+                    )}
+                  </Button>
+                  <Button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 rounded-lg flex items-center gap-2">
+                    <MessageCircle className="w-4 h-4" /> Message
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
 
-            {/* Following */}
-            <TabsContent value="following">
-              <div className="text-center py-8">
-                <p className="text-gray-500">Following list coming soon...</p>
-              </div>
-            </TabsContent>
-          </Tabs>
+          {/* Bio + Stats */}
+          {userData.bio && (
+            <p className="mt-6 text-gray-700 leading-relaxed max-w-2xl">
+              {userData.bio}
+            </p>
+          )}
+          <div className="flex gap-6 mt-4 text-gray-700">
+            <div>
+              <span className="font-bold">{userData.followersCount}</span>{" "}
+              Followers
+            </div>
+            <div>
+              <span className="font-bold">{userData.followingCount}</span>{" "}
+              Following
+            </div>
+          </div>
+        </Card>
+
+        {/* --- Divider --- */}
+        <div className="my-10 border-t border-gray-300 w-11/12 mx-auto" />
+
+        {/* --- Reviews Section --- */}
+        <div className="px-4 sm:px-0">
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+            {isOwnProfile ? "My Reviews" : `${userData.displayName}'s Reviews`}
+          </h2>
+
+          {reviewsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-500"></div>
+              <span className="ml-3 text-gray-500">Loading reviews...</span>
+            </div>
+          ) : userReviews.length > 0 ? (
+            <div className="flex flex-col gap-8">
+              {userReviews.map((review) => (
+                <ReviewCard
+                  key={review.id || review._id}
+                  review={{
+                    ...review,
+                    userName: userData.displayName,
+                    userProfilePicture: userData.profilePicture,
+                  }}
+                />
+              ))}
+            </div>
+          ) : (
+            <Card className="bg-white rounded-xl shadow-sm">
+              <CardContent className="p-10 text-center text-gray-500">
+                <div className="text-5xl mb-4">📝</div>
+                {isOwnProfile
+                  ? "You haven't written any reviews yet. Share your first experience!"
+                  : `${userData.displayName} hasn't written any reviews yet.`}
+              </CardContent>
+            </Card>
+          )}
         </div>
-      </div>
+        </div>
+      )}
 
-      {/* Profile Edit Modal */}
-      <ProfileEditModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        user={userData}
-        onSave={handleSaveProfile}
-      />
+      {/* --- Edit Modal --- */}
+      {isOwnProfile && (
+        <ProfileEditModal
+          isOpen={isEditModalOpen}
+          onClose={handleCloseEditModal}
+          user={userData}
+        />
+      )}
     </div>
   );
 };
 
-export default ProfilePage;
+export default Profile;

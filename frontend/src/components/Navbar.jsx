@@ -15,10 +15,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const location = useLocation();
-
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
-
-  const handleLogout = async () => {
+  
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);  const handleLogout = async () => {
     try {
       await API.post("/logout");
       queryClient.invalidateQueries(["user"]);
@@ -44,109 +42,153 @@ export default function Navbar() {
       {/* Desktop/Tablet Top Navbar - MODERN DESIGN */}
       <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200/50 fixed top-0 left-0 w-full z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 group">
-              <img src={logo} alt="Cleverly" className="w-9 h-9 rounded-xl object-cover shadow-md group-hover:shadow-lg transition-all" />
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:block">
-                Cleverly
-              </span>
-            </Link>
+          <div className="flex items-center h-16">
+            {/* Left Side - Logo */}
+            <div className="flex items-center">
+              <Link to="/" className="flex items-center space-x-2 group">
+                <img src={logo} alt="Cleverly" className="w-9 h-9 rounded-xl object-cover shadow-md group-hover:shadow-lg transition-all" />
+                <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent hidden sm:block">
+                  Cleverly
+                </span>
+              </Link>
+            </div>
 
-            {/* Navigation - Desktop */}
-            <nav className="hidden md:flex items-center space-x-1">
-              <Link
-                to="/"
-                className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
-                  isActive("/")
-                    ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md shadow-purple-500/30"
-                    : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                }`}
-              >
-                <Home className="w-4 h-4 mr-2" />
-                <span>Home</span>
-              </Link>
-              <Link
-                to="/discover"
-                className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
-                  isActive("/discover")
-                    ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30"
-                    : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                }`}
-              >
-                <Compass className="w-4 h-4 mr-2" />
-                <span>Discover</span>
-              </Link>
-              <Link
-                to="/trendings"
-                className={`flex items-center px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
-                  isActive("/trendings")
-                    ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md shadow-orange-500/30"
-                    : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
-                }`}
-              >
-                <Flame className="w-4 h-4 mr-2" />
-                <span>Trending</span>
-              </Link>
-            </nav>
+            {/* Center Section - Navigation + Search */}
+            <div className="flex-1 flex items-center justify-center space-x-2 lg:space-x-6">
+              {/* Mobile/Tablet Menu Button (for md screens) */}
+              <button className="lg:hidden p-2 hover:bg-gray-100 rounded-xl transition-colors">
+                <Search className="w-5 h-5 text-gray-600" />
+              </button>
+              
+              {/* Navigation - Desktop */}
+              <nav className="hidden lg:flex items-center space-x-1">
+                <Link
+                  to="/"
+                  className={`flex items-center px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
+                    isActive("/")
+                      ? "bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-md shadow-purple-500/30"
+                      : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                  }`}
+                >
+                  <Home className="w-4 h-4 mr-2" />
+                  <span>Home</span>
+                </Link>
+                <Link
+                  to="/discover"
+                  className={`flex items-center px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
+                    isActive("/discover")
+                      ? "bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-md shadow-blue-500/30"
+                      : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                  }`}
+                >
+                  <Compass className="w-4 h-4 mr-2" />
+                  <span>Discover</span>
+                </Link>
+                <Link
+                  to="/trendings"
+                  className={`flex items-center px-3 lg:px-4 py-2 rounded-xl transition-all duration-200 font-medium ${
+                    isActive("/trendings")
+                      ? "bg-gradient-to-r from-orange-500 to-red-600 text-white shadow-md shadow-orange-500/30"
+                      : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"
+                  }`}
+                >
+                  <Flame className="w-4 h-4 mr-2" />
+                  <span>Trending</span>
+                </Link>
+              </nav>
 
-            {/* Search bar - Desktop */}
-            <div className="flex-1 mx-6 hidden md:block max-w-md">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search reviews, topics..."
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all border border-transparent focus:border-purple-200"
-                />
+              {/* Search bar - Desktop */}
+              <div className="hidden lg:block max-w-sm xl:max-w-md w-full">
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Search reviews, topics..."
+                    className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all border border-transparent focus:border-purple-200"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Right Actions - Desktop */}
-            <div className="hidden md:flex items-center space-x-3">
+            {/* Right Side - Actions */}
+            <div className="flex items-center space-x-2 lg:space-x-3">
               {!isLoading && !user && (
                 <Link
                   to="/login"
-                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-5 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all"
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white px-4 lg:px-5 py-2 rounded-xl text-sm font-medium shadow-md hover:shadow-lg transition-all"
                 >
-                  Sign In
+                  <span className="hidden sm:inline">Sign In</span>
+                  <span className="sm:hidden">Login</span>
                 </Link>
               )}
+              
               {/* Review Button */}
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-5 py-2 rounded-xl text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white px-4 lg:px-5 py-2 rounded-xl text-sm font-medium flex items-center shadow-md hover:shadow-lg transition-all"
               >
                 <Plus className="w-4 h-4 mr-1.5" />
-                Review
+                <span className="hidden sm:inline">Review</span>
               </button>
+              
+              {/* Notifications */}
               <button className="relative p-2.5 hover:bg-gray-100 rounded-xl transition-colors">
                 <Bell className="w-5 h-5 text-gray-600" />
                 <span className="absolute top-1 right-1 w-4 h-4 text-xs flex items-center justify-center bg-red-500 text-white rounded-full font-semibold">
                   3
                 </span>
-              </button>
-
-              {/* User dropdown */}
+              </button>              {/* User dropdown */}
               {user && (
                 <div className="relative">
                   <button
                     onClick={toggleDropdown}
-                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold hover:shadow-lg transition-all"
-                    title={user.name}
+                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold hover:shadow-lg transition-all relative overflow-hidden"
+                    title={user.name || user.username || 'User'}
                   >
-                    {user.name[0].toUpperCase()}
+                    {/* Always show the fallback first */}
+                    <span className="w-full h-full flex items-center justify-center">
+                      {(user.name || user.username || 'U')[0].toUpperCase()}
+                    </span>
+                    
+                    {/* Profile picture overlay */}
+                    {user.profilePicture && (
+                      <img
+                        src={user.profilePicture}
+                        alt={user.name || user.username || 'User'}
+                        className="absolute inset-0 w-full h-full object-cover rounded-xl"
+                        onError={(e) => {
+                          console.log('Navbar: Profile picture failed to load:', user.profilePicture);
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    )}
                   </button>
 
                   {isDropdownOpen && (
                     <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                       <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-blue-50">
                         <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md">
-                            {user.name[0].toUpperCase()}
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md relative overflow-hidden">
+                            {/* Always show the fallback first */}
+                            <span className="w-full h-full flex items-center justify-center">
+                              {(user.name || user.username || 'U')[0].toUpperCase()}
+                            </span>
+                            
+                            {/* Profile picture overlay */}
+                            {user.profilePicture && (
+                              <img
+                                src={user.profilePicture}
+                                alt={user.name || user.username || 'User'}
+                                className="absolute inset-0 w-full h-full object-cover rounded-xl"
+                                onError={(e) => {
+                                  console.log('Navbar dropdown: Profile picture failed to load:', user.profilePicture);
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">{user.name}</div>
+                            <div className="font-semibold text-gray-900 truncate">{user.name || user.username || 'Anonymous User'}</div>
                             <div className="text-xs text-gray-600 truncate">{user.email}</div>
                           </div>
                         </div>
@@ -310,12 +352,28 @@ export default function Navbar() {
                   ? "bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/50 scale-110" 
                   : "bg-transparent"
               }`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold relative overflow-hidden ${
                   isActive("/profile") 
                     ? "bg-white text-green-600" 
                     : "bg-gray-300 text-gray-600"
                 }`}>
-                  {user.name[0].toUpperCase()}
+                  {/* Always show the fallback first */}
+                  <span className="w-full h-full flex items-center justify-center">
+                    {(user.name || user.username || 'U')[0].toUpperCase()}
+                  </span>
+                  
+                  {/* Profile picture overlay */}
+                  {user.profilePicture && (
+                    <img
+                      src={user.profilePicture}
+                      alt={user.name || user.username || 'User'}
+                      className="absolute inset-0 w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        console.log('Mobile navbar: Profile picture failed to load:', user.profilePicture);
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  )}
                 </div>
               </div>
               {isActive("/profile") && (
@@ -364,10 +422,10 @@ export default function Navbar() {
                 
                 <div className="relative flex items-center space-x-4">
                   <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-xl flex items-center justify-center text-2xl font-bold border-2 border-white/30 shadow-xl">
-                    {user.name[0].toUpperCase()}
+                    {(user.name || user.username || 'U')[0].toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <div className="font-bold text-lg">{user.name}</div>
+                    <div className="font-bold text-lg">{user.name || user.username || 'Anonymous User'}</div>
                     <div className="text-white/80 text-sm">{user.email}</div>
                   </div>
                 </div>

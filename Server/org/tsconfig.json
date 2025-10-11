@@ -26,6 +26,18 @@
     },
     {
       "path": "./apps/domain-management"
+    },
+    {
+      "path": "./apps/user-profile-e2e"
+    },
+    {
+      "path": "./apps/user-profile"
+    },
+    {
+      "path": "./apps/user-interactions-e2e"
+    },
+    {
+      "path": "./apps/user-interactions"
     }
   ]
 }

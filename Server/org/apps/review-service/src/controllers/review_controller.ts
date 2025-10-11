@@ -25,9 +25,9 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Check if it's an exceptional review (custom category) or standard review
-    const isExceptional = !categoryId && (exceptionalCategory || exceptionalSubCategory);
+    const isExceptional = (!categoryId || categoryId.trim() === '') && (exceptionalCategory || exceptionalSubCategory);
     
-    if (!isExceptional && !categoryId) {
+    if (!isExceptional && (!categoryId || categoryId.trim() === '')) {
       throw new ValidationError('Either categoryId or exceptionalCategory is required');
     }
 
@@ -47,9 +47,11 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
       reviewData.exceptionalCategory = exceptionalCategory;
       reviewData.exceptionalSubCategory = exceptionalSubCategory;
     } else {
-      // Handle standard categories
-      reviewData.categoryId = categoryId;
-      if (subCategoryId) {
+      // Handle standard categories - only add if not empty
+      if (categoryId && categoryId.trim() !== '') {
+        reviewData.categoryId = categoryId;
+      }
+      if (subCategoryId && subCategoryId.trim() !== '') {
         reviewData.subCategoryId = subCategoryId;
       }
     }
@@ -62,6 +64,12 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
             id: true,
             name: true,
             email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
           }
         },
         category: {
@@ -120,12 +128,13 @@ export const updateReview = async (req: Request, res: Response, next: NextFuncti
 // Get reviews with optional filters
 export const getReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { categoryId, subCategoryId, productOrService } = req.query;
+    const { categoryId, subCategoryId, productOrService, userId } = req.query;
 
     const filters: any = {};
     if (categoryId) filters.categoryId = categoryId;
     if (subCategoryId) filters.subCategoryId = subCategoryId;
     if (productOrService) filters.productOrService = productOrService;
+    if (userId) filters.userId = userId; // Add user filtering
 
     const reviews = await prisma.reviews.findMany({
       where: filters,
@@ -135,6 +144,12 @@ export const getReviews = async (req: Request, res: Response, next: NextFunction
             id: true,
             name: true,
             email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
           }
         },
         comments: true,
@@ -183,6 +198,12 @@ export const getExceptionalReviews = async (req: Request, res: Response, next: N
             id: true,
             name: true,
             email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
           }
         }
       },
@@ -289,6 +310,12 @@ export const createCategoryFromExceptional = async (req: Request, res: Response,
             id: true,
             name: true,
             email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
           }
         },
         category: {
@@ -362,6 +389,12 @@ export const createSubCategoryFromExceptional = async (req: Request, res: Respon
             id: true,
             name: true,
             email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
           }
         },
         category: {

@@ -1,10 +1,11 @@
-﻿﻿import React, { useState } from "react";
+﻿﻿import React, { useState, useEffect } from "react";
 import StoriesSection from "../components/StoriesSection";
 import TrendingSection from "../components/TrendingSection";
 import ReviewCard from "../components/ReviewCard";
 import CategoriesSection from "../components/CategoriesSection";
 import CreateReview from "../components/CreateReview";
 import { Link } from "react-router-dom";
+import reviewService from "../services/review.service";
 import aron from '../assets/aron.png';
 import selena from '../assets/selena.jpg';
 import profile from '../assets/profile.png';
@@ -14,46 +15,36 @@ import laptop from '../assets/posts/laptop.jpg';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reviews, setReviews] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Dummy reviews for the feed
-  const reviews = [
-    {
-      id: 1,
-      user: {
-        name: "Alex Rodriguez",
-        avatar: aron,
-      },
-      product: "MacBook Pro 16\"",
-      image: macbook,
-      rating: 4.8,
-      time: "2h ago",
-      description: "The new MacBook Pro is a powerhouse for professionals. The display is stunning and battery life is impressive.",
-    },
-    {
-      id: 2,
-      user: {
-        name: "Sarah Chen",
-        avatar: selena,
-      },
-      product: "iPhone 14 Pro",
-      image: phone1,
-      rating: 4.7,
-      time: "4h ago",
-      description: "Amazing camera and smooth performance. A bit pricey but worth it for Apple fans.",
-    },
-    {
-      id: 3,
-      user: {
-        name: "John Smith",
-        avatar: profile,
-      },
-      product: "Dell XPS 13",
-      image: laptop,
-      rating: 4.5,
-      time: "6h ago",
-      description: "Sleek design and great performance. Perfect for on-the-go productivity.",
-    },
-  ];
+  // Fetch reviews when component mounts
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const fetchReviews = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Home: Fetching all reviews...');
+      const reviewsData = await reviewService.getAllReviews();
+      console.log('Home: Received reviews data:', reviewsData);
+      setReviews(reviewsData || []);
+    } catch (err) {
+      console.error('Home: Error fetching reviews:', err);
+      setError('Failed to load reviews. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReviewCreated = () => {
+    setIsModalOpen(false);
+    // Refresh reviews after creating a new one
+    fetchReviews();
+  };
 
   return (
     <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 min-h-screen pb-4 pt-24">
@@ -122,23 +113,60 @@ export default function Home() {
           </div>
           {/* Feed of reviews */}
           <div className="space-y-6">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
+            {loading ? (
+              <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                <p className="mt-2 text-gray-600">Loading reviews...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+                  <p className="text-red-600 font-medium">{error}</p>
+                  <button 
+                    onClick={fetchReviews}
+                    className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+                  >
+                    Try Again
+                  </button>
+                </div>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-8">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h3>
+                  <p className="text-gray-600 mb-4">Be the first to share your experience!</p>
+                  <button
+                    onClick={() => setIsModalOpen(true)}
+                    className="inline-flex items-center px-6 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 transition"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                    </svg>
+                    Write First Review
+                  </button>
+                </div>
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <ReviewCard key={review.id} review={review} />
+              ))
+            )}
 
-            {/* Load More Button */}
-            <div className="text-center py-8">
-              <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg transition">
-                Load More Reviews
-              </button>
-            </div>
+            {/* Load More Button - only show if there are reviews */}
+            {!loading && !error && reviews.length > 0 && (
+              <div className="text-center py-8">
+                <button className="px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white font-semibold rounded-xl hover:shadow-lg transition">
+                  Load More Reviews
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Create Review Modal */}
           {isModalOpen && (
             <CreateReview 
               onClose={() => setIsModalOpen(false)} 
-              onReviewCreated={() => setIsModalOpen(false)} 
+              onReviewCreated={handleReviewCreated} 
             />
           )}
         </div>

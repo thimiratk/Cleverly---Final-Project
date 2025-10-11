@@ -6,6 +6,7 @@ import { uploadMultipleToCloudinary, testCloudinaryConfig } from '../utils/cloud
 
 export default function ReviewPostUI({ onClose, onReviewCreated }) {
   const { user, isLoading: userLoading, isError: userError } = useUser(); // Get user at component level
+  
   const [isOpen, setIsOpen] = useState(true);
   const [reviewData, setReviewData] = useState({
     categoryId: '',
@@ -321,10 +322,6 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
 
       console.log('Uploaded media URLs:', { photos: uploadedPhotos, videos: uploadedVideos });
 
-      // Stage 3: Create review
-      setUploadProgress(80);
-      setUploadStage('Creating review...');
-
       // Prepare review data with uploaded URLs
       const reviewPayload = {
         ...reviewData,
@@ -333,7 +330,17 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
         userId: user.id
       };
 
+      // Clean up empty string values for optional fields
+      if (reviewPayload.categoryId === '') delete reviewPayload.categoryId;
+      if (reviewPayload.subCategoryId === '') delete reviewPayload.subCategoryId;
+      if (reviewPayload.exceptionalCategory === '') delete reviewPayload.exceptionalCategory;
+      if (reviewPayload.exceptionalSubCategory === '') delete reviewPayload.exceptionalSubCategory;
+
       console.log('Final review payload:', reviewPayload);
+
+      // Stage 3: Create review
+      setUploadProgress(80);
+      setUploadStage('Creating review...');
 
       const response = await createReview(reviewPayload);
       console.log('Review created successfully:', response);
@@ -496,8 +503,24 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
 
           {/* User Info */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold">
-              {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-semibold relative overflow-hidden">
+              {/* Always show the fallback first */}
+              <span className="w-full h-full flex items-center justify-center">
+                {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+              </span>
+              
+              {/* Profile picture overlay */}
+              {user?.profilePicture && (
+                <img
+                  src={user.profilePicture}
+                  alt={user.name}
+                  className="absolute inset-0 w-full h-full object-cover rounded-full"
+                  onError={(e) => {
+                    console.log('CreateReview: Profile picture failed to load:', user.profilePicture);
+                    e.target.style.display = 'none';
+                  }}
+                />
+              )}
             </div>
             <div>
               <p className="font-semibold text-gray-800">{user?.name || 'User'}</p>

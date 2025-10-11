@@ -33,8 +33,13 @@ export const verifyUser = async (verificationData) => {
       });
 
       if (loginResponse.data.user) {
-        // Tokens are handled via cookies by backend
+        // Store user info and access token in localStorage
         localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
+        
+        // Store access token if provided (for cross-origin services)
+        if (loginResponse.data.accessToken) {
+          localStorage.setItem('accessToken', loginResponse.data.accessToken);
+        }
       }
 
       return {
@@ -59,8 +64,14 @@ export const loginUser = async ({ email, password }) => {
     const response = await API.post('/login', { email, password });
     // Backend returns: { message: "Login successful", user: { id, email, name } }
     if (response.data.user) {
-      // Tokens are handled via cookies by backend
+      // Store user info and access token in localStorage
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      // Store access token if provided (for cross-origin services)
+      if (response.data.accessToken) {
+        localStorage.setItem('accessToken', response.data.accessToken);
+      }
+      
       return {
         success: true,
         message: response.data.message,
@@ -98,4 +109,5 @@ export const logoutUser = async () => {
   }
   // Clear user data from localStorage
   localStorage.removeItem('user');
+  localStorage.removeItem('accessToken');
 };

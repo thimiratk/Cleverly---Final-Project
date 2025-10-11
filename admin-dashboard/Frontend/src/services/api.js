@@ -1,11 +1,9 @@
 // API Configuration
-const AUTH_API_BASE_URL = import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:6001';
-const DOMAIN_API_BASE_URL = import.meta.env.VITE_DOMAIN_API_BASE_URL || 'http://localhost:6003';
-const REVIEW_API_BASE_URL = import.meta.env.VITE_REVIEW_API_BASE_URL || 'http://localhost:6002';
+const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api';
 
 // Generic API call function (for admin dashboard endpoints)
 const apiCall = async (endpoint, options = {}) => {
-  const url = `${AUTH_API_BASE_URL}${endpoint}`;
+  const url = `${API_GATEWAY_URL}${endpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -30,7 +28,7 @@ const apiCall = async (endpoint, options = {}) => {
 
 // Domain API call function  
 const domainApiCall = async (endpoint, options = {}) => {
-  const url = `${DOMAIN_API_BASE_URL}${endpoint}`;
+  const url = `${API_GATEWAY_URL}${endpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -55,7 +53,7 @@ const domainApiCall = async (endpoint, options = {}) => {
 
 // Review API call function
 const reviewApiCall = async (endpoint, options = {}) => {
-  const url = `${REVIEW_API_BASE_URL}${endpoint}`;
+  const url = `${API_GATEWAY_URL}${endpoint}`;
   const config = {
     headers: {
       'Content-Type': 'application/json',
@@ -81,47 +79,47 @@ const reviewApiCall = async (endpoint, options = {}) => {
 // Domain Management API calls
 export const domainAPI = {
   // Categories
-  getCategories: () => domainApiCall('/api/categories'),
-  getCategoryById: (id) => domainApiCall(`/api/categories/${id}`),
+  getCategories: () => domainApiCall('/categories'),
+  getCategoryById: (id) => domainApiCall(`/categories/${id}`),
   
   createCategory: (categoryData) =>
-    domainApiCall('/api/categories', {
+    domainApiCall('/categories', {
       method: 'POST',
       body: JSON.stringify(categoryData),
     }),
 
   updateCategory: (id, categoryData) =>
-    domainApiCall(`/api/categories/${id}`, {
+    domainApiCall(`/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(categoryData),
     }),
 
   deleteCategory: (id) =>
-    domainApiCall(`/api/categories/${id}`, {
+    domainApiCall(`/categories/${id}`, {
       method: 'DELETE',
     }),
 
   // Subcategories
-  getSubCategories: () => domainApiCall('/api/subcategories'),
-  getSubCategoryById: (id) => domainApiCall(`/api/subcategories/${id}`),
+  getSubCategories: () => domainApiCall('/subcategories'),
+  getSubCategoryById: (id) => domainApiCall(`/subcategories/${id}`),
 
   getSubCategoriesByCategory: (categoryId) =>
-    domainApiCall(`/api/categories/${categoryId}/subcategories`),
+    domainApiCall(`/categories/${categoryId}/subcategories`),
 
   createSubCategory: (subCategoryData) =>
-    domainApiCall('/api/subcategories', {
+    domainApiCall('/subcategories', {
       method: 'POST',
       body: JSON.stringify(subCategoryData),
     }),
 
   updateSubCategory: (id, subCategoryData) =>
-    domainApiCall(`/api/subcategories/${id}`, {
+    domainApiCall(`/subcategories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(subCategoryData),
     }),
 
   deleteSubCategory: (id) =>
-    domainApiCall(`/api/subcategories/${id}`, {
+    domainApiCall(`/subcategories/${id}`, {
       method: 'DELETE',
     }),
 };

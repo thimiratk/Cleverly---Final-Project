@@ -13,6 +13,19 @@ datasource db {
   provider = "mongodb"
   url      = env("DATABASE_URL")
 }
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+enum NotificationType {
+  FOLLOW
+  REVIEW_VOTE
+  COMMENT
+  COMMENT_LIKE
+}
+
 model images {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   file_id String
@@ -29,11 +42,41 @@ model users {
   password String?
   provider String?
   avatar images?
-  following String[]
+  
+  // User Profile Fields
+  username String? @unique
+  firstName String?
+  lastName String?
+  bio String?
+  profilePicture String?
+  coverPicture String?
+  trustScore Int @default(0)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   reviews reviews[]
+  badges userBadges[]
+  
+  // User interaction relationships
+  reviewVotes reviewVotes[]
+  commentLikes commentLikes[]
+  comments reviewComments[]
+  followersRelation userFollows[] @relation("UserFollowers")
+  followingRelation userFollows[] @relation("UserFollowing")
+  notifications notifications[]
 
+}
+
+model userBadges {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  description String
+  iconUrl String?
+  earnedAt DateTime @default(now())
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id])
 }
 
 model categories {
@@ -73,18 +116,83 @@ model reviews {
   videos String[]
   userId String @db.ObjectId
   user users @relation(fields: [userId], references: [id])
-  likes String[]
+  
+  // Relationships for interactions
+  votes reviewVotes[]
   comments reviewComments[]
+  
+  // Computed fields for counts
+  upvotesCount Int @default(0)
+  downvotesCount Int @default(0)
+  commentsCount Int @default(0)
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model reviewComments {
   id String @id @default(auto()) @map("_id") @db.ObjectId
-  text String
+  content String
   userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
   reviewId String @db.ObjectId
-  review reviews @relation(fields: [reviewId], references: [id])
+  review reviews @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  parentCommentId String? @db.ObjectId
+  parentComment reviewComments? @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies reviewComments[] @relation("CommentReplies")
+  likes commentLikes[]
+  likesCount Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// New models for user interactions
+
+model reviewVotes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId String @db.ObjectId
+  review reviews @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  voteType VoteType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, reviewId])
+}
+
+model commentLikes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String @db.ObjectId
+  comment reviewComments @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, commentId])
+}
+
+model userFollows {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  followerId String @db.ObjectId
+  follower users @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String @db.ObjectId
+  followedUser users @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+}
+
+model notifications {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type NotificationType
+  title String
+  message String
+  data Json? // Additional data for the notification
+  relatedUserId String? @db.ObjectId // User who triggered the notification
+  isRead Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

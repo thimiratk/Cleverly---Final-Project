@@ -58,7 +58,10 @@ app.get('/gateway-health', (req, res) => {
 });
 
 // Route review requests to review service
-app.use("/reviews", proxy("http://localhost:6002", {
+app.use("/api/reviews", proxy("http://localhost:6002", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
   proxyErrorHandler: (err, res, next) => {
     console.error('Review service proxy error:', err);
     if (!res.headersSent) {
@@ -68,7 +71,10 @@ app.use("/reviews", proxy("http://localhost:6002", {
 }));
 
 // Route auth requests to auth service (login, register, verify, etc.)
-app.use(["/login", "/register", "/verify", "/logout", "/refresh-token"], proxy("http://localhost:6001", {
+app.use(["/api/login", "/api/register", "/api/verify", "/api/logout", "/api/refresh-token", "/api/auth"], proxy("http://localhost:6001", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
   proxyErrorHandler: (err, res, next) => {
     console.error('Auth service proxy error:', err);
     if (!res.headersSent) {
@@ -77,8 +83,41 @@ app.use(["/login", "/register", "/verify", "/logout", "/refresh-token"], proxy("
   }
 }));
 
+// Route admin requests to auth service (admin panel functionality)
+app.use(["/api/admin", "/api/users"], proxy("http://localhost:6001", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Admin service proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route Google auth requests (without /api prefix since they come directly from Google)
+app.use(["/auth/google", "/auth/google/callback", "/callback"], proxy("http://localhost:6001", {
+  proxyReqPathResolver: (req) => {
+    // If the request is just /callback, rewrite it to /auth/google/callback
+    if (req.originalUrl === '/callback') {
+      return '/auth/google/callback';
+    }
+    return req.originalUrl;
+  },
+  proxyErrorHandler: (err, res, next) => {
+    console.error('Google auth proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
 // Route domain management requests
-app.use("/domains", proxy("http://localhost:6003", {
+app.use(["/api/domains", "/api/categories", "/api/subcategories"], proxy("http://localhost:6003", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
   proxyErrorHandler: (err, res, next) => {
     console.error('Domain management service proxy error:', err);
     if (!res.headersSent) {
@@ -87,10 +126,34 @@ app.use("/domains", proxy("http://localhost:6003", {
   }
 }));
 
-// Route all other requests to auth service (fallback)
-app.use("/", proxy("http://localhost:6001", {
+// Route user profile requests
+app.use("/api/profile", proxy("http://localhost:6004", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
+  proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
+    // For multipart uploads, preserve the content-type and don't parse the body
+    if (srcReq.headers['content-type'] && srcReq.headers['content-type'].includes('multipart/form-data')) {
+      proxyReqOpts.headers['content-type'] = srcReq.headers['content-type'];
+    }
+    return proxyReqOpts;
+  },
+  parseReqBody: false, // Don't parse body for file uploads
   proxyErrorHandler: (err, res, next) => {
-    console.error('Auth service proxy error:', err);
+    console.error('User profile service proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route user interactions requests (votes, comments, follows)
+app.use(["/api/interactions", "/api/follows", "/api/comments"], proxy("http://localhost:6005", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
+  proxyErrorHandler: (err, res, next) => {
+    console.error('User interactions service proxy error:', err);
     if (!res.headersSent) {
       res.status(502).json({ error: 'Bad gateway', details: err.message });
     }

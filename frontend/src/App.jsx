@@ -8,10 +8,10 @@ import Home from "./pages/Home";
 import Register from "./pages/Register";
 import Login from "./pages/Login";
 
-
 import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
+import ProfileEditModal from "./pages/ProfileEditModal";
 
 import { AuthProvider } from "./context/AuthContext";
 
@@ -53,6 +53,8 @@ function AppContent() {
         <Route path="/trendings" element={<Trendings />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/user-profile/:userId" element={<Profile />} />
+        <Route path="/user-profile" element={<ProfileEditModal />} />
         
       </Routes>
     </>
