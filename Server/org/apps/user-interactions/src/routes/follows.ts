@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '../../../../generated/prisma';
 
 const router = express.Router();
 
@@ -45,7 +45,7 @@ router.post('/follow', async (req, res): Promise<void> => {
     });
 
     // Get follower info for notification
-    const follower = await prisma.user.findUnique({
+    const follower = await prisma.users.findUnique({
       where: { id: followerId },
       select: { name: true, profilePicture: true }
     });
@@ -193,7 +193,7 @@ router.get('/following/:userId', async (req, res): Promise<void> => {
     const following = await prisma.userFollows.findMany({
       where: { followerId: userId },
       include: {
-        following: {
+        followedUser: {
           select: {
             id: true,
             name: true,
