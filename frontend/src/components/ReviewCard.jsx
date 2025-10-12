@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { FaStar, FaArrowUp, FaArrowDown, FaComment, FaShare, FaEllipsisH, FaUser } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { upvoteReview, downvoteReview, removeVote, getUserVoteStatus, getInteractionStats, updateReview } from '../services/api';
+import { userProfileService } from '../services/userProfile.service';
 import CommentSection from './CommentSection';
 import reviewService from '../services/review.service';
 
@@ -27,6 +28,9 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
   });
   const [editError, setEditError] = useState('');
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [isFollowed, setIsFollowed] = useState(false);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState('');
   const optionsRef = useRef(null);
 
   // Handle different data structures from API
@@ -48,6 +52,8 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
     commentsCount: review?.commentsCount || review?.comments || 0,
     time: review?.createdAt || review?.date || review?.timestamp || new Date().toISOString()
   };
+
+  const reviewAuthorId = reviewData.user?.id ? reviewData.user.id.toString() : null;
 
   const isOwner = Boolean(currentUser?.id) && reviewData.user?.id && reviewData.user.id.toString() === currentUser.id.toString();
 
@@ -75,13 +81,70 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
   }, [reviewData.id]);
 
   useEffect(() => {
+    const handleFollowStatusChange = (event) => {
+      const { detail } = event;
+      if (!detail) return;
+      const { userId: targetUserId, isFollowing } = detail;
+      if (!targetUserId) return;
+
+      if (reviewAuthorId && targetUserId.toString() === reviewAuthorId) {
+        setIsFollowed(Boolean(isFollowing));
+        if (isFollowing) {
+          setFollowError('');
+        }
+      }
+    };
+
+    window.addEventListener('followStatusChanged', handleFollowStatusChange);
+    return () => {
+      window.removeEventListener('followStatusChanged', handleFollowStatusChange);
+    };
+  }, [reviewAuthorId]);
+
+  useEffect(() => {
     const nextText = review?.reviewText || review?.content || review?.description || review?.comment || '';
     setCurrentReviewText(nextText);
     setIsEditing(false);
     setEditedText('');
     setEditError('');
     setIsSavingEdit(false);
+    setFollowError('');
   }, [review]);
+
+  useEffect(() => {
+    if (!currentUser?.id || !reviewData.user?.id || isOwner) {
+      setIsFollowed(false);
+      setIsFollowLoading(false);
+      setFollowError('');
+      return;
+    }
+
+    let isMounted = true;
+    setIsFollowLoading(true);
+    setFollowError('');
+
+    userProfileService
+      .getFollowStats(reviewData.user.id)
+      .then((stats) => {
+        if (!isMounted) return;
+        setIsFollowed(Boolean(stats?.isFollowing));
+      })
+      .catch((error) => {
+        console.error('Error fetching follow status:', error);
+        if (!isMounted) return;
+        setIsFollowed(false);
+        setFollowError('');
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsFollowLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser?.id, reviewData.user?.id, isOwner]);
 
   // Load user's vote status and interaction stats on component mount
   useEffect(() => {
@@ -362,6 +425,90 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
     }
   };
 
+  const handleFollowUser = async () => {
+    if (!currentUser?.id) {
+      alert('Please log in to follow users.');
+      return;
+    }
+
+    if (isOwner || !reviewData.user?.id) {
+      return;
+    }
+
+    if (isFollowed) {
+      return;
+    }
+
+    setIsFollowLoading(true);
+    setFollowError('');
+
+    try {
+      await userProfileService.followUser(reviewData.user.id);
+      setIsFollowed(true);
+      window.dispatchEvent(
+        new CustomEvent('followStatusChanged', {
+          detail: {
+            userId: reviewData.user.id,
+            isFollowing: true,
+            followersCount: undefined,
+            followerId: currentUser?.id,
+            followerFollowingCount: undefined,
+            action: 'follow'
+          }
+        })
+      );
+    } catch (error) {
+      console.error('Error following user:', error);
+      const status = error?.response?.status;
+      if (status === 409) {
+        // Already following on the backend, treat as success
+        setIsFollowed(true);
+        setFollowError('');
+        window.dispatchEvent(
+          new CustomEvent('followStatusChanged', {
+            detail: {
+              userId: reviewData.user.id,
+              isFollowing: true,
+              followersCount: undefined,
+              followerId: currentUser?.id,
+              followerFollowingCount: undefined,
+              action: 'sync'
+            }
+          })
+        );
+      } else if (status === 400) {
+        const message = error?.response?.data?.error || error?.response?.data?.message;
+        if (typeof message === 'string' && message.toLowerCase().includes('already')) {
+          setIsFollowed(true);
+          setFollowError('');
+          window.dispatchEvent(
+            new CustomEvent('followStatusChanged', {
+              detail: {
+                userId: reviewData.user.id,
+                isFollowing: true,
+                followersCount: undefined,
+                followerId: currentUser?.id,
+                followerFollowingCount: undefined,
+                action: 'sync'
+              }
+            })
+          );
+        } else if (message) {
+          setFollowError(message);
+        } else {
+          setFollowError('Unable to follow right now. Please try again later.');
+        }
+      } else if (status && status >= 500) {
+        setFollowError('Unable to follow right now. Please try again later.');
+      } else {
+        const message = error?.response?.data?.message || error?.error || error?.message || 'Failed to follow user. Please try again later.';
+        setFollowError(message);
+      }
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
       {/* Header */}
@@ -404,37 +551,54 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
             </p>
           </div>
         </div>
-        {isOwner && (
-          <div className="relative" ref={optionsRef}>
+        <div className="flex items-center gap-2">
+          {!isOwner && currentUser?.id && !isFollowed && (
             <button
-              className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
-              onClick={() => setShowOptions((prev) => !prev)}
-              disabled={isProcessing}
+              onClick={handleFollowUser}
+              disabled={isFollowLoading}
+              className="px-4 py-2 rounded-full text-sm font-semibold bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <FaEllipsisH className="w-4 h-4" />
+              {isFollowLoading ? 'Following…' : 'Follow'}
             </button>
-            {showOptions && (
-              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
-                  onClick={startEditing}
-                  disabled={isProcessing || isSavingEdit || isEditing}
-                >
-                  Edit Review
-                </button>
-                <div className="border-t border-gray-100" />
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-                  onClick={handleDeleteReview}
-                  disabled={isProcessing}
-                >
-                  {isProcessing ? 'Deleting…' : 'Delete Review'}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+          )}
+          {isOwner && (
+            <div className="relative" ref={optionsRef}>
+              <button
+                className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
+                onClick={() => setShowOptions((prev) => !prev)}
+                disabled={isProcessing}
+              >
+                <FaEllipsisH className="w-4 h-4" />
+              </button>
+              {showOptions && (
+                <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    onClick={startEditing}
+                    disabled={isProcessing || isSavingEdit || isEditing}
+                  >
+                    Edit Review
+                  </button>
+                  <div className="border-t border-gray-100" />
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                    onClick={handleDeleteReview}
+                    disabled={isProcessing}
+                  >
+                    {isProcessing ? 'Deleting…' : 'Delete Review'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
+
+      {!isOwner && followError && (
+        <div className="px-5 -mt-3 mb-2">
+          <p className="text-xs text-red-500">{followError}</p>
+        </div>
+      )}
 
       {/* Product & Rating */}
       <div className="px-5 pb-3">

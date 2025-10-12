@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   MapPin,
@@ -29,6 +29,11 @@ const Profile = () => {
   const [userReviews, setUserReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isFollowLoading, setIsFollowLoading] = useState(false);
+  const [followError, setFollowError] = useState("");
+  const [showFollowMenu, setShowFollowMenu] = useState(false);
+  const followMenuRef = useRef(null);
+  const [refreshCounter, setRefreshCounter] = useState(0);
 
   const isOwnProfile = !userId || userId === currentUser?.id;
 
@@ -50,6 +55,21 @@ const Profile = () => {
   });
 
   useEffect(() => {
+    if (!showFollowMenu) return;
+
+    const handleClickOutside = (event) => {
+      if (followMenuRef.current && !followMenuRef.current.contains(event.target)) {
+        setShowFollowMenu(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showFollowMenu]);
+
+  useEffect(() => {
     const fetchProfileData = async () => {
       try {
         setLoading(true);
@@ -62,6 +82,22 @@ const Profile = () => {
         const profileData = isOwnProfile
           ? await userProfileService.getCurrentUserProfile()
           : await userProfileService.getUserProfile(userId);
+
+        const profileUserId = profileData.id;
+        let followStats = null;
+
+        if (profileUserId) {
+          try {
+            followStats = await userProfileService.getFollowStats(profileUserId);
+          } catch (statsError) {
+            console.error("Profile component - follow stats error:", statsError);
+            followStats = {
+              followersCount: profileData.followersCount || 0,
+              followingCount: profileData.followingCount || 0,
+              isFollowing: profileData.isFollowing || false,
+            };
+          }
+        }
 
         console.log('Profile component - fetched profileData:', profileData);
         console.log('Profile component - createdAt from backend:', profileData.createdAt);
@@ -88,17 +124,18 @@ const Profile = () => {
           profilePicture: profileData.profilePicture || "",
           coverPicture: profileData.coverPicture || "",
           trustScore: profileData.trustScore || 0,
-          followersCount: profileData.followersCount || 0,
-          followingCount: profileData.followingCount || 0,
+          followersCount: followStats?.followersCount ?? profileData.followersCount ?? 0,
+          followingCount: followStats?.followingCount ?? profileData.followingCount ?? 0,
           badges: profileData.badges || [],
-          isFollowing: profileData.isFollowing || false,
+          isFollowing: followStats?.isFollowing ?? profileData.isFollowing ?? false,
           createdAt: profileData.createdAt,
         };
 
         console.log('Profile component - mapped userData:', mappedUserData);
         console.log('Profile component - final displayName:', mappedUserData.displayName);
         setUserData(mappedUserData);
-        await fetchUserReviews(profileData.id);
+    setFollowError("");
+        await fetchUserReviews(profileUserId);
       } catch (err) {
         console.error('Profile component - error:', err);
         setError("Failed to load profile data");
@@ -108,7 +145,79 @@ const Profile = () => {
     };
 
     if (currentUser) fetchProfileData();
-  }, [userId, currentUser, isOwnProfile]);
+  }, [userId, currentUser, isOwnProfile, refreshCounter]);
+
+  useEffect(() => {
+    const handleFollowStatusChange = (event) => {
+      const { detail } = event;
+      if (!detail) return;
+
+      const targetId = detail.userId?.toString?.() || detail.userId;
+      const followerId = detail.followerId?.toString?.() || detail.followerId;
+      const action = detail.action;
+      if (!targetId) return;
+
+      const profileId = userData?.id?.toString?.();
+      if (!profileId) return;
+
+      if (targetId === profileId) {
+        setUserData((prev) => {
+          if (!prev) return prev;
+          const nextFollowers = typeof detail.followersCount === "number"
+            ? detail.followersCount
+            : action === "follow"
+              ? (prev.followersCount || 0) + 1
+              : action === "unfollow"
+                ? Math.max(0, (prev.followersCount || 0) - 1)
+                : prev.followersCount;
+          return {
+            ...prev,
+            isFollowing: Boolean(detail.isFollowing),
+            followersCount: nextFollowers,
+          };
+        });
+        setShowFollowMenu(false);
+        setFollowError("");
+      }
+
+      if (followerId === profileId) {
+        setUserData((prev) => {
+          if (!prev) return prev;
+          if (typeof detail.followerFollowingCount === "number") {
+            return {
+              ...prev,
+              followingCount: detail.followerFollowingCount,
+            };
+          }
+
+          if (action === "follow") {
+            return {
+              ...prev,
+              followingCount: (prev.followingCount || 0) + 1,
+            };
+          }
+
+          if (action === "unfollow") {
+            return {
+              ...prev,
+              followingCount: Math.max(0, (prev.followingCount || 0) - 1),
+            };
+          }
+
+          return prev;
+        });
+
+        if (typeof detail.followerFollowingCount !== "number" && (!action || action === "sync")) {
+          setRefreshCounter((count) => count + 1);
+        }
+      }
+    };
+
+    window.addEventListener("followStatusChanged", handleFollowStatusChange);
+    return () => {
+      window.removeEventListener("followStatusChanged", handleFollowStatusChange);
+    };
+  }, [userData?.id]);
 
   const fetchUserReviews = async (profileUserId) => {
     try {
@@ -128,25 +237,123 @@ const Profile = () => {
     }
   };
 
-  const handleFollowToggle = async () => {
+  const requireAuthenticated = () => {
+    if (!currentUser?.id) {
+      alert("Please log in to follow users.");
+      return false;
+    }
+    return true;
+  };
+
+  const dispatchFollowEvent = (
+    targetId,
+    isFollowing,
+    followersCount,
+    followerId,
+    followerFollowingCount,
+    action = "follow"
+  ) => {
+    window.dispatchEvent(
+      new CustomEvent("followStatusChanged", {
+        detail: {
+          userId: targetId,
+          isFollowing,
+          followersCount,
+          followerId,
+          followerFollowingCount,
+          action,
+        },
+      })
+    );
+  };
+
+  const handleFollow = async () => {
+    if (!requireAuthenticated()) return;
+    if (!userData?.id) return;
+
+    setIsFollowLoading(true);
+    setFollowError("");
+
+    const targetId = userData.id.toString();
+
     try {
-      if (userData.isFollowing) {
-        await userProfileService.unfollowUser(userId);
-        setUserData((prev) => ({
-          ...prev,
-          isFollowing: false,
-          followersCount: prev.followersCount - 1,
-        }));
-      } else {
-        await userProfileService.followUser(userId);
-        setUserData((prev) => ({
+      await userProfileService.followUser(targetId);
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const nextFollowers = (prev.followersCount || 0) + 1;
+        const followerId = currentUser?.id?.toString?.() || currentUser?.id;
+        dispatchFollowEvent(targetId, true, nextFollowers, followerId, undefined, "follow");
+        return {
           ...prev,
           isFollowing: true,
-          followersCount: prev.followersCount + 1,
-        }));
+          followersCount: nextFollowers,
+        };
+      });
+      setShowFollowMenu(false);
+    } catch (error) {
+      console.error("Profile follow error:", error);
+      const status = error?.response?.status;
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.error ||
+        error?.message ||
+        "Unable to follow right now. Please try again later.";
+
+      if (status === 409 || (typeof message === "string" && message.toLowerCase().includes("already"))) {
+        setUserData((prev) => {
+          if (!prev) return prev;
+          const followerId = currentUser?.id?.toString?.() || currentUser?.id;
+          dispatchFollowEvent(targetId, true, prev.followersCount || 0, followerId, undefined, "sync");
+          return {
+            ...prev,
+            isFollowing: true,
+          };
+        });
+        setFollowError("");
+        setShowFollowMenu(false);
+      } else {
+        setFollowError(message);
       }
-    } catch (err) {
-      console.error(err);
+    } finally {
+      setIsFollowLoading(false);
+    }
+  };
+
+  const handleUnfollow = async () => {
+    if (!requireAuthenticated()) return;
+    if (!userData?.id) return;
+
+    setIsFollowLoading(true);
+    setFollowError("");
+
+    const targetId = userData.id.toString();
+
+    try {
+      await userProfileService.unfollowUser(targetId);
+      setUserData((prev) => {
+        if (!prev) return prev;
+        const nextFollowers = Math.max(0, (prev.followersCount || 0) - 1);
+        const followerId = currentUser?.id?.toString?.() || currentUser?.id;
+        dispatchFollowEvent(targetId, false, nextFollowers, followerId, undefined, "unfollow");
+        return {
+          ...prev,
+          isFollowing: false,
+          followersCount: nextFollowers,
+        };
+      });
+    } catch (error) {
+      console.error("Profile unfollow error:", error);
+      const message =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.error ||
+        error?.message ||
+        "Unable to unfollow right now. Please try again later.";
+      setFollowError(message);
+    } finally {
+      setIsFollowLoading(false);
+      setShowFollowMenu(false);
     }
   };
 
@@ -274,30 +481,47 @@ const Profile = () => {
                 </Button>
               ) : (
                 <>
-                  <Button
-                    onClick={handleFollowToggle}
-                    className={`${
-                      userData.isFollowing
-                        ? "bg-gray-200 hover:bg-gray-300 text-gray-800"
-                        : "bg-blue-600 hover:bg-blue-700 text-white"
-                    } px-6 rounded-lg flex items-center gap-2`}
-                  >
-                    {userData.isFollowing ? (
-                      <>
+                  {userData.isFollowing ? (
+                    <div className="relative" ref={followMenuRef}>
+                      <Button
+                        onClick={() => setShowFollowMenu((prev) => !prev)}
+                        disabled={isFollowLoading}
+                        className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-6 rounded-lg flex items-center gap-2"
+                      >
                         <UserMinus className="w-4 h-4" /> Following
-                      </>
-                    ) : (
-                      <>
-                        <UserPlus className="w-4 h-4" /> Follow
-                      </>
-                    )}
-                  </Button>
+                      </Button>
+                      {showFollowMenu && (
+                        <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-20">
+                          <button
+                            type="button"
+                            onClick={handleUnfollow}
+                            disabled={isFollowLoading}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                          >
+                            {isFollowLoading ? "Processing…" : "Unfollow"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={handleFollow}
+                      disabled={isFollowLoading}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 rounded-lg flex items-center gap-2 disabled:opacity-60"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      {isFollowLoading ? "Following…" : "Follow"}
+                    </Button>
+                  )}
                   <Button className="bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 rounded-lg flex items-center gap-2">
                     <MessageCircle className="w-4 h-4" /> Message
                   </Button>
                 </>
               )}
             </div>
+            {!isOwnProfile && followError && (
+              <p className="text-sm text-red-500 mt-2">{followError}</p>
+            )}
           </div>
 
           {/* Bio + Stats */}

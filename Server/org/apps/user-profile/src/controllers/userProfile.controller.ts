@@ -25,6 +25,15 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
       return res.status(404).json({ error: 'User profile not found' });
     }
 
+    const [followersCount, followingCount] = await Promise.all([
+      prisma.userFollows.count({
+        where: { followingId: userId }
+      }),
+      prisma.userFollows.count({
+        where: { followerId: userId }
+      })
+    ]);
+
     // Check if current user is following this profile
     const isFollowing = currentUserId && userProfile.followersRelation && userProfile.followersRelation.length > 0;
 
@@ -39,8 +48,8 @@ export const getUserProfile = async (req: AuthenticatedRequest, res: Response) =
       bio: userProfile.bio,
       profilePicture: userProfile.profilePicture || userProfile.avatar?.url,
       coverPicture: userProfile.coverPicture,
-      followersCount: userProfile.followersCount,
-      followingCount: userProfile.followingCount,
+  followersCount,
+  followingCount,
       trustScore: userProfile.trustScore,
       badges: userProfile.badges.map((badge: any) => ({
         id: badge.id,
@@ -81,6 +90,15 @@ export const getCurrentUserProfile = async (req: AuthenticatedRequest, res: Resp
       return res.status(404).json({ error: 'User profile not found' });
     }
 
+    const [followersCount, followingCount] = await Promise.all([
+      prisma.userFollows.count({
+        where: { followingId: userId }
+      }),
+      prisma.userFollows.count({
+        where: { followerId: userId }
+      })
+    ]);
+
     const profileResponse = {
       id: userProfile.id,
       userId: userProfile.id,
@@ -92,8 +110,8 @@ export const getCurrentUserProfile = async (req: AuthenticatedRequest, res: Resp
       bio: userProfile.bio,
       profilePicture: userProfile.profilePicture || userProfile.avatar?.url,
       coverPicture: userProfile.coverPicture,
-      followersCount: userProfile.followersCount,
-      followingCount: userProfile.followingCount,
+  followersCount,
+  followingCount,
       trustScore: userProfile.trustScore,
       badges: userProfile.badges.map((badge: any) => ({
         id: badge.id,
@@ -264,24 +282,34 @@ export const getFollowStats = async (req: AuthenticatedRequest, res: Response) =
 
     const userProfile = await prisma.users.findUnique({
       where: { id: userId },
-      select: {
-        followersCount: true,
-        followingCount: true,
-        followers: true
-      }
+      select: { id: true }
     });
     
     if (!userProfile) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    const isFollowing = currentUserId ? 
-      userProfile.followers.includes(currentUserId) : false;
+    const [followersCount, followingCount, followRelation] = await Promise.all([
+      prisma.userFollows.count({
+        where: { followingId: userId }
+      }),
+      prisma.userFollows.count({
+        where: { followerId: userId }
+      }),
+      currentUserId ? prisma.userFollows.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: userId
+          }
+        }
+      }) : Promise.resolve(null)
+    ]);
 
     const followStats = {
-      followersCount: userProfile.followersCount,
-      followingCount: userProfile.followingCount,
-      isFollowing
+      followersCount,
+      followingCount,
+      isFollowing: Boolean(followRelation)
     };
 
     return res.json(followStats);
@@ -306,33 +334,43 @@ export const followUser = async (req: AuthenticatedRequest, res: Response) => {
 
     const targetUser = await prisma.users.findUnique({
       where: { id: userId },
-      select: { id: true, followers: true, followersCount: true }
+      select: { id: true }
     });
 
     if (!targetUser) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if already following
-    if (targetUser.followers.includes(currentUserId)) {
+    const existingFollow = await prisma.userFollows.findUnique({
+      where: {
+        followerId_followingId: {
+          followerId: currentUserId,
+          followingId: userId
+        }
+      }
+    });
+
+    if (existingFollow) {
       return res.status(400).json({ error: 'Already following this user' });
     }
 
     // Update both users in a transaction
     await prisma.$transaction([
-      // Add current user to target user's followers
+      prisma.userFollows.create({
+        data: {
+          followerId: currentUserId,
+          followingId: userId
+        }
+      }),
       prisma.users.update({
         where: { id: userId },
         data: {
-          followers: { push: currentUserId },
           followersCount: { increment: 1 }
         }
       }),
-      // Add target user to current user's following
       prisma.users.update({
         where: { id: currentUserId },
         data: {
-          following: { push: userId },
           followingCount: { increment: 1 }
         }
       })
@@ -354,14 +392,18 @@ export const unfollowUser = async (req: AuthenticatedRequest, res: Response) => 
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const [targetUser, currentUser] = await Promise.all([
+    const [targetUser, followRelation] = await Promise.all([
       prisma.users.findUnique({
         where: { id: userId },
-        select: { id: true, followers: true, followersCount: true }
+        select: { id: true }
       }),
-      prisma.users.findUnique({
-        where: { id: currentUserId },
-        select: { id: true, following: true, followingCount: true }
+      prisma.userFollows.findUnique({
+        where: {
+          followerId_followingId: {
+            followerId: currentUserId,
+            followingId: userId
+          }
+        }
       })
     ]);
 
@@ -369,26 +411,24 @@ export const unfollowUser = async (req: AuthenticatedRequest, res: Response) => 
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if currently following
-    if (!targetUser.followers.includes(currentUserId)) {
+    if (!followRelation) {
       return res.status(400).json({ error: 'Not following this user' });
     }
 
     // Update both users in a transaction
     await prisma.$transaction([
-      // Remove current user from target user's followers
+      prisma.userFollows.delete({
+        where: { id: followRelation.id }
+      }),
       prisma.users.update({
         where: { id: userId },
         data: {
-          followers: targetUser.followers.filter((id: string) => id !== currentUserId),
           followersCount: { decrement: 1 }
         }
       }),
-      // Remove target user from current user's following
       prisma.users.update({
         where: { id: currentUserId },
         data: {
-          following: currentUser?.following.filter((id: string) => id !== userId) || [],
           followingCount: { decrement: 1 }
         }
       })

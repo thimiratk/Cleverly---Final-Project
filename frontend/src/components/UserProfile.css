@@ -169,6 +169,57 @@
   color: #dc3545;
 }
 
+.follow-btn-group {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.follow-btn.following {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.follow-btn .caret {
+  font-size: 12px;
+  transition: transform 0.2s ease;
+}
+
+.follow-btn.following[aria-expanded="true"] .caret {
+  transform: rotate(180deg);
+}
+
+.follow-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.14);
+  min-width: 150px;
+  padding: 6px 0;
+  z-index: 25;
+}
+
+.follow-dropdown button {
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 10px 18px;
+  font-size: 14px;
+  text-align: left;
+  color: #dc3545;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.follow-dropdown button:hover {
+  background: rgba(220, 53, 69, 0.08);
+  color: #c82333;
+}
+
 .edit-profile-btn {
   padding: 12px 24px;
   background: #f8f9fa;
