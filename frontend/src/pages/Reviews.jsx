@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { FaTrash } from 'react-icons/fa';
 import CreateReview from '../components/CreateReview';
 import ReviewCard from '../components/ReviewCard';
-import { createReview, updateReview, getReviews } from '../services/api';
+import { createReview, getReviews } from '../services/api';
 import API from '../services/api'; // Keep this only if you use it for likes/comments
 
 export default function Reviews() {
@@ -53,15 +52,26 @@ export default function Reviews() {
     }
   };
 
-  // ✅ Delete review (still using API for delete)
-  const handleDelete = async (reviewId) => {
-    if (!window.confirm("Delete this review?")) return;
-    try {
-      await API.delete(`/reviews/${reviewId}`);
-      setReviews((prev) => prev.filter((r) => r._id !== reviewId));
-    } catch (error) {
-      console.error("Error deleting review:", error);
-    }
+  const handleReviewDeleted = (reviewId) => {
+    setReviews((prev) => prev.filter((r) => (r._id || r.id) !== reviewId));
+  };
+
+  const handleReviewUpdated = (updatedReview) => {
+    if (!updatedReview) return;
+    setReviews((prevReviews) =>
+      prevReviews.map((review) => {
+        const currentId = review._id || review.id;
+        const updatedId = updatedReview.id || updatedReview._id;
+        if (!currentId || !updatedId || currentId !== updatedId) {
+          return review;
+        }
+        return {
+          ...review,
+          ...updatedReview,
+          reviewText: updatedReview.reviewText ?? review.reviewText,
+        };
+      })
+    );
   };
 
   // ✅ Like review (kept as API call — can be moved later)
@@ -139,7 +149,8 @@ export default function Reviews() {
                   },
                 }}
                 currentUser={user ? { id: user._id, role: user.role } : null}
-                onDelete={handleDelete}
+                onReviewDeleted={handleReviewDeleted}
+                onReviewUpdated={handleReviewUpdated}
                 onLike={handleLike}
                 onComment={handleComment}
               />

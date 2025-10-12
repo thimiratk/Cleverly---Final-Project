@@ -8,7 +8,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
-import rateLimit from 'express-rate-limit';
+import ratelimit from 'express-rate-limit';
 import { PrismaClient } from '../../../generated/prisma';
 import dotenv from 'dotenv';
 
@@ -45,9 +45,9 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
-const limiter = rateLimit({
+const limiter = ratelimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: 1000, // Increased limit for development - each IP can make 1000 requests per 15 minutes
   message: 'Too many requests from this IP, please try again later.'
 });
 app.use('/', limiter);

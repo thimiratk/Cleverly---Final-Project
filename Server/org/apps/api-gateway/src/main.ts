@@ -36,8 +36,8 @@ app.use(express.urlencoded({limit:"100mb", extended:true}));
 app.use(cookieParser())
 
 const limiter = ratelimit({
-  windowMs: 15*60*1000,
-  max:(req:any)=>(req.user ? 1000:100),
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max:(req:any)=>(req.user ? 10000:5000), // Increased limits for development
   message:{error:"Too many requests, please try again later"},
   standardHeaders: true,
   legacyHeaders: true,

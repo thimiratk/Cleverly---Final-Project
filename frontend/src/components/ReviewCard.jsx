@@ -1,13 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaStar, FaArrowUp, FaArrowDown, FaComment, FaShare, FaEllipsisH, FaUser } from 'react-icons/fa';
+import { useAuth } from '../context/AuthContext';
+import { upvoteReview, downvoteReview, removeVote, getUserVoteStatus, getInteractionStats, updateReview } from '../services/api';
+import CommentSection from './CommentSection';
+import reviewService from '../services/review.service';
 
-function ReviewCard({ review }) {
+function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, currentUser: currentUserOverride }) {
   const navigate = useNavigate();
+  const { user: authUser } = useAuth();
+  const currentUser = currentUserOverride || authUser;
   const [upvotes, setUpvotes] = useState(review?.upvotes || 0);
   const [downvotes, setDownvotes] = useState(review?.downvotes || 0);
   const [userVote, setUserVote] = useState(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const [commentsCount, setCommentsCount] = useState(review?.commentsCount || 0);
+  const [loading, setLoading] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedText, setEditedText] = useState('');
+  const [currentReviewText, setCurrentReviewText] = useState(() => {
+    return review?.reviewText || review?.content || review?.description || review?.comment || '';
+  });
+  const [editError, setEditError] = useState('');
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const optionsRef = useRef(null);
 
   // Handle different data structures from API
   const reviewData = {
@@ -21,7 +41,7 @@ function ReviewCard({ review }) {
     },
     product: review?.product || review?.productOrService || review?.title || 'Product Review',
     rating: Number(review?.rating) || 0,
-    description: review?.reviewText || review?.content || review?.description || review?.comment || '',
+  description: currentReviewText,
     images: review?.photos || review?.pictures || review?.images || (review?.image ? [review.image] : []),
     upvotes: review?.upvotesCount || review?.upvotes || review?.likes || 0,
     downvotes: review?.downvotesCount || review?.downvotes || review?.dislikes || 0,
@@ -29,9 +49,69 @@ function ReviewCard({ review }) {
     time: review?.createdAt || review?.date || review?.timestamp || new Date().toISOString()
   };
 
+  const isOwner = Boolean(currentUser?.id) && reviewData.user?.id && reviewData.user.id.toString() === currentUser.id.toString();
+
+  useEffect(() => {
+    if (!showOptions) return;
+
+    const handleClickOutside = (event) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target)) {
+        setShowOptions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showOptions]);
+
   // Debug: Log review data structure (can be removed later)
   console.log('ReviewCard - Original review:', review);
   console.log('ReviewCard - Mapped reviewData:', reviewData);
+
+  useEffect(() => {
+    setIsDeleted(false);
+  }, [reviewData.id]);
+
+  useEffect(() => {
+    const nextText = review?.reviewText || review?.content || review?.description || review?.comment || '';
+    setCurrentReviewText(nextText);
+    setIsEditing(false);
+    setEditedText('');
+    setEditError('');
+    setIsSavingEdit(false);
+  }, [review]);
+
+  // Load user's vote status and interaction stats on component mount
+  useEffect(() => {
+    const loadUserVoteStatus = async () => {
+      if (!currentUser || !reviewData.id) return;
+
+      try {
+        // Get user's current vote status
+        const voteStatus = await getUserVoteStatus(reviewData.id, currentUser.id);
+        setUserVote(voteStatus.voteType);
+
+        // Get latest interaction stats
+        const stats = await getInteractionStats(reviewData.id);
+        setUpvotes(stats.upvotes);
+        setDownvotes(stats.downvotes);
+        setCommentsCount(stats.comments);
+      } catch (error) {
+        console.error('Error loading vote status:', error);
+        // Don't show error to user, just use default values
+      }
+    };
+
+    // Add a small delay to prevent rapid requests
+    const timeoutId = setTimeout(loadUserVoteStatus, 100);
+    return () => clearTimeout(timeoutId);
+  }, [currentUser?.id, reviewData.id]); // Only depend on IDs to prevent unnecessary re-renders
+
+  if (isDeleted) {
+    return null;
+  }
 
   // Format time from ISO string or timestamp
   function formatTime(timeString) {
@@ -73,25 +153,75 @@ function ReviewCard({ review }) {
     return lastSpace > 150 ? truncated.substring(0, lastSpace) + '...' : truncated + '...';
   };
 
-  const handleUpvote = () => {
-    if (userVote === 'up') {
-      setUserVote(null);
-      setUpvotes(upvotes - 1);
-    } else {
-      setUserVote('up');
-      setUpvotes(upvotes + 1);
-      if (userVote === 'down') setDownvotes(downvotes - 1);
+  const handleUpvote = async () => {
+    if (!currentUser) {
+      alert('Please log in to vote');
+      return;
+    }
+
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (userVote === 'UPVOTE') {
+        // Remove upvote
+        const result = await removeVote(reviewData.id, currentUser.id);
+        setUserVote(null);
+        setUpvotes(result.upvotes);
+        setDownvotes(result.downvotes);
+      } else {
+        // Add or change to upvote
+        const result = await upvoteReview(reviewData.id, currentUser.id);
+        setUserVote('UPVOTE');
+        setUpvotes(result.upvotes);
+        setDownvotes(result.downvotes);
+      }
+    } catch (error) {
+      console.error('Error handling upvote:', error);
+      if (error.response?.status === 429) {
+        alert('Too many requests. Please wait a moment before voting again.');
+      } else {
+        alert('Failed to update vote. Please try again.');
+      }
+    } finally {
+      // Add a minimum delay to prevent rapid clicking
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
-  const handleDownvote = () => {
-    if (userVote === 'down') {
-      setUserVote(null);
-      setDownvotes(downvotes - 1);
-    } else {
-      setUserVote('down');
-      setDownvotes(downvotes + 1);
-      if (userVote === 'up') setUpvotes(upvotes - 1);
+  const handleDownvote = async () => {
+    if (!currentUser) {
+      alert('Please log in to vote');
+      return;
+    }
+
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      if (userVote === 'DOWNVOTE') {
+        // Remove downvote
+        const result = await removeVote(reviewData.id, currentUser.id);
+        setUserVote(null);
+        setUpvotes(result.upvotes);
+        setDownvotes(result.downvotes);
+      } else {
+        // Add or change to downvote
+        const result = await downvoteReview(reviewData.id, currentUser.id);
+        setUserVote('DOWNVOTE');
+        setUpvotes(result.upvotes);
+        setDownvotes(result.downvotes);
+      }
+    } catch (error) {
+      console.error('Error handling downvote:', error);
+      if (error.response?.status === 429) {
+        alert('Too many requests. Please wait a moment before voting again.');
+      } else {
+        alert('Failed to update vote. Please try again.');
+      }
+    } finally {
+      // Add a minimum delay to prevent rapid clicking
+      setTimeout(() => setLoading(false), 500);
     }
   };
 
@@ -105,6 +235,130 @@ function ReviewCard({ review }) {
       navigate(`/user-profile/${reviewData.user.id}`);
     } else {
       console.error('No user ID found for navigation');
+    }
+  };
+
+  // Toggle comments section
+  const handleCommentsClick = () => {
+    setShowComments(!showComments);
+  };
+
+  // Handle comment count updates from CommentSection
+  const handleCommentCountChange = (newCount) => {
+    setCommentsCount(newCount);
+  };
+
+  const handleDeleteReview = async () => {
+    if (!currentUser?.id) {
+      alert('Please log in to manage your review.');
+      return;
+    }
+
+    if (!isOwner) {
+      alert('You can only delete your own reviews.');
+      return;
+    }
+
+    if (!reviewData.id) {
+      alert('Unable to delete this review right now.');
+      return;
+    }
+
+    const confirmed = window.confirm('Delete this review? This action cannot be undone.');
+    if (!confirmed) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      await reviewService.deleteReview(reviewData.id, currentUser.id);
+      setIsDeleted(true);
+      setShowOptions(false);
+      if (onReviewDeleted) {
+        onReviewDeleted(reviewData.id);
+      } else if (onDelete) {
+        onDelete(reviewData.id);
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      const message = error?.response?.data?.message || 'Failed to delete review. Please try again later.';
+      alert(message);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const startEditing = () => {
+    setEditedText(currentReviewText);
+    setEditError('');
+    setIsEditing(true);
+    setShowOptions(false);
+  };
+
+  const cancelEditing = () => {
+    if (isSavingEdit) {
+      return;
+    }
+    setIsEditing(false);
+    setEditedText('');
+    setEditError('');
+  };
+
+  const saveEdit = async () => {
+    if (!currentUser?.id) {
+      setEditError('Please log in to edit your review.');
+      return;
+    }
+
+    if (!isOwner) {
+      setEditError('You can only edit your own review.');
+      return;
+    }
+
+    if (!reviewData.id) {
+      setEditError('Unable to edit this review right now.');
+      return;
+    }
+
+    const trimmedText = (editedText || '').trim();
+    if (!trimmedText) {
+      setEditError('Review text cannot be empty.');
+      return;
+    }
+
+    if (trimmedText === currentReviewText) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSavingEdit(true);
+    setEditError('');
+
+    try {
+      const response = await updateReview(reviewData.id, {
+        userId: currentUser.id,
+        reviewText: trimmedText,
+      });
+
+      const updatedReview = response?.review;
+      const updatedText = updatedReview?.reviewText || trimmedText;
+      setCurrentReviewText(updatedText);
+      setIsExpanded(false);
+      setIsEditing(false);
+
+      if (typeof onReviewUpdated === 'function') {
+        onReviewUpdated(updatedReview || {
+          ...review,
+          reviewText: updatedText,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating review:', error);
+      const message = error?.response?.data?.message || 'Failed to update review. Please try again later.';
+      setEditError(message);
+    } finally {
+      setIsSavingEdit(false);
     }
   };
 
@@ -150,9 +404,36 @@ function ReviewCard({ review }) {
             </p>
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition">
-          <FaEllipsisH className="w-4 h-4" />
-        </button>
+        {isOwner && (
+          <div className="relative" ref={optionsRef}>
+            <button
+              className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100 transition"
+              onClick={() => setShowOptions((prev) => !prev)}
+              disabled={isProcessing}
+            >
+              <FaEllipsisH className="w-4 h-4" />
+            </button>
+            {showOptions && (
+              <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  onClick={startEditing}
+                  disabled={isProcessing || isSavingEdit || isEditing}
+                >
+                  Edit Review
+                </button>
+                <div className="border-t border-gray-100" />
+                <button
+                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
+                  onClick={handleDeleteReview}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Deleting…' : 'Delete Review'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Product & Rating */}
@@ -174,14 +455,46 @@ function ReviewCard({ review }) {
         
         {/* Review Text with See More functionality */}
         <div className="text-gray-700 text-sm leading-relaxed">
-          <p className="whitespace-pre-wrap">{getDisplayText(reviewData.description)}</p>
-          {shouldTruncate(reviewData.description) && (
-            <button
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="text-purple-600 hover:text-purple-700 font-medium mt-2 text-sm transition-colors duration-200"
-            >
-              {isExpanded ? 'See less' : 'See more'}
-            </button>
+          {isEditing ? (
+            <div>
+              <textarea
+                value={editedText}
+                onChange={(event) => setEditedText(event.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                rows={5}
+                disabled={isSavingEdit}
+              />
+              {editError && <p className="text-xs text-red-500 mt-2">{editError}</p>}
+              <div className="flex gap-3 mt-3">
+                <button
+                  onClick={saveEdit}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isSavingEdit ? 'Saving…' : 'Save Changes'}
+                </button>
+                <button
+                  onClick={cancelEditing}
+                  disabled={isSavingEdit}
+                  className="px-4 py-2 rounded-lg text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              <p className="whitespace-pre-wrap">{getDisplayText(reviewData.description)}</p>
+              {shouldTruncate(reviewData.description) && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-purple-600 hover:text-purple-700 font-medium mt-2 text-sm transition-colors duration-200"
+                >
+                  {isExpanded ? 'See less' : 'See more'}
+                </button>
+              )}
+              {editError && <p className="text-xs text-red-500 mt-2">{editError}</p>}
+            </>
           )}
         </div>
       </div>
@@ -230,31 +543,40 @@ function ReviewCard({ review }) {
           <div className="flex items-center gap-2">
             <button
               onClick={handleUpvote}
+              disabled={loading}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                userVote === 'up' 
+                userVote === 'UPVOTE' 
                 ? 'bg-green-100 text-green-700 shadow-md transform scale-105' 
                 : 'bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-600'
-              }`}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <FaArrowUp className="w-4 h-4" />
-              <span>{reviewData.upvotes}</span>
+              <span>{upvotes}</span>
             </button>
             <button
               onClick={handleDownvote}
+              disabled={loading}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-                userVote === 'down' 
+                userVote === 'DOWNVOTE' 
                 ? 'bg-red-100 text-red-700 shadow-md transform scale-105' 
                 : 'bg-gray-100 text-gray-600 hover:bg-red-50 hover:text-red-600'
-              }`}
+              } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <FaArrowDown className="w-4 h-4" />
-              <span>{reviewData.downvotes}</span>
+              <span>{downvotes}</span>
             </button>
           </div>
           <div className="flex items-center gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-all">
+            <button 
+              onClick={handleCommentsClick}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                showComments 
+                ? 'bg-blue-200 text-blue-800' 
+                : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+              }`}
+            >
               <FaComment className="w-4 h-4" />
-              <span>{reviewData.commentsCount || 0}</span>
+              <span>{commentsCount || 0}</span>
             </button>
             <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-purple-100 text-purple-700 hover:bg-purple-200 transition-all">
               <FaShare className="w-4 h-4" />
@@ -262,6 +584,13 @@ function ReviewCard({ review }) {
           </div>
         </div>
       </div>
+
+      {/* Comments Section */}
+      <CommentSection 
+        reviewId={reviewData.id}
+        isVisible={showComments}
+        onCommentCountChange={handleCommentCountChange}
+      />
     </div>
   );
 }

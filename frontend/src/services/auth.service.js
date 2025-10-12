@@ -1,6 +1,33 @@
 // src/services/auth.service.js
 import API from './api';
 
+const STORAGE_KEY = 'user';
+
+const normalizeUser = (rawUser = {}) => {
+  if (!rawUser) {
+    return null;
+  }
+
+  const id = rawUser.id || rawUser._id || rawUser.userId || rawUser.uid || null;
+
+  return {
+    ...rawUser,
+    ...(id ? { id } : {}),
+  };
+};
+
+const storeUser = (user) => {
+  const normalized = normalizeUser(user);
+  if (normalized) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+  }
+  return normalized;
+};
+
+const clearStoredUser = () => {
+  localStorage.removeItem(STORAGE_KEY);
+};
+
 // Register a new user
 export const registerUser = async (userData) => {
   try {
@@ -33,19 +60,20 @@ export const verifyUser = async (verificationData) => {
       });
 
       if (loginResponse.data.user) {
-        // Store user info and access token in localStorage
-        localStorage.setItem('user', JSON.stringify(loginResponse.data.user));
-        
+        storeUser(loginResponse.data.user);
+
         // Store access token if provided (for cross-origin services)
         if (loginResponse.data.accessToken) {
           localStorage.setItem('accessToken', loginResponse.data.accessToken);
         }
       }
 
+      const normalizedUser = normalizeUser(loginResponse.data.user);
+
       return {
         success: true,
         message: response.data.message,
-        user: loginResponse.data.user
+        user: normalizedUser
       };
     }
     return response.data;
@@ -64,18 +92,17 @@ export const loginUser = async ({ email, password }) => {
     const response = await API.post('/login', { email, password });
     // Backend returns: { message: "Login successful", user: { id, email, name } }
     if (response.data.user) {
-      // Store user info and access token in localStorage
-      localStorage.setItem('user', JSON.stringify(response.data.user));
-      
+      const normalizedUser = storeUser(response.data.user);
+
       // Store access token if provided (for cross-origin services)
       if (response.data.accessToken) {
         localStorage.setItem('accessToken', response.data.accessToken);
       }
-      
+
       return {
         success: true,
         message: response.data.message,
-        user: response.data.user
+        user: normalizedUser
       };
     }
     return response.data;
@@ -88,15 +115,38 @@ export const loginUser = async ({ email, password }) => {
   }
 };
 
-// Get current logged-in user
+// Get current logged-in user from storage
 export const getCurrentUser = () => {
   try {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser && storedUser !== 'undefined') return JSON.parse(storedUser);
+    const storedUser = localStorage.getItem(STORAGE_KEY);
+    if (storedUser && storedUser !== 'undefined') {
+      return normalizeUser(JSON.parse(storedUser));
+    }
     return null;
   } catch (error) {
     console.error('Error parsing user from localStorage:', error);
     return null;
+  }
+};
+
+// Fetch the current user from the API (useful after OAuth flows)
+export const fetchCurrentUser = async () => {
+  try {
+    const response = await API.get('/auth/me');
+    const apiUser = response.data?.user;
+    if (!apiUser) {
+      return { user: null, status: response.status };
+    }
+
+    const normalizedUser = storeUser(apiUser);
+    return { user: normalizedUser, status: response.status };
+  } catch (error) {
+    const status = error.response?.status;
+    if (status === 401) {
+      clearStoredUser();
+    }
+    console.error('Failed to fetch current user from API:', error.response?.data || error.message);
+    return { user: null, status, error };
   }
 };
 
@@ -108,6 +158,8 @@ export const logoutUser = async () => {
     console.error('Logout error:', error);
   }
   // Clear user data from localStorage
-  localStorage.removeItem('user');
+  clearStoredUser();
   localStorage.removeItem('accessToken');
 };
+
+export { storeUser, normalizeUser, clearStoredUser };

@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 import { 
   createReview, 
   updateReview, 
+  deleteReview,
   getReviews, 
   getReviewCount, 
   getExceptionalReviews, 
@@ -15,6 +16,7 @@ const router: Router = express.Router();
 
 router.post('/', createReview);
 router.put('/:id', updateReview);
+router.delete('/:id', deleteReview);
 router.get('/', getReviews);
 router.get('/count', getReviewCount);
 

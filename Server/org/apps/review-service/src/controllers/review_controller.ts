@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
 import prisma from '../../../../packages/libs/prisma';
 import { ValidationError } from '../../../../packages/error-handler';
+import { deleteAssetsByUrls } from '../utils/cloudinary';
 
 // Create a new review
 export const createReview = async (req: Request, res: Response, next: NextFunction) => {
@@ -94,32 +96,163 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-// Update an existing review
+// Update an existing review (text and media only)
 export const updateReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const reviewId = req.params.id;
-    const { categoryId, subCategoryId, productOrService, product, rating, reviewText, photos, videos } = req.body;
+    const { reviewText, photos, videos, userId } = req.body;
 
-    const existingReview = await prisma.reviews.findUnique({ where: { id: reviewId } });
+    if (!userId) {
+      throw new ValidationError('userId is required');
+    }
+
+    const existingReview = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        userId: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+      },
+    });
+
     if (!existingReview) {
       throw new ValidationError('Review not found');
+    }
+
+    if (existingReview.userId !== userId) {
+      throw new ValidationError('You are not authorized to edit this review');
+    }
+
+    let normalizedReviewText = existingReview.reviewText;
+    if (typeof reviewText === 'string') {
+      const trimmed = reviewText.trim();
+      if (trimmed.length === 0) {
+        throw new ValidationError('Review text cannot be empty');
+      }
+      normalizedReviewText = trimmed;
+    }
+
+    const submittedPhotos = Array.isArray(photos) ? photos : existingReview.photos;
+    const submittedVideos = Array.isArray(videos) ? videos : existingReview.videos;
+
+    const removedPhotos = existingReview.photos.filter((photoUrl: string) => !submittedPhotos.includes(photoUrl));
+    const removedVideos = existingReview.videos.filter((videoUrl: string) => !submittedVideos.includes(videoUrl));
+
+    if (removedPhotos.length > 0) {
+      await deleteAssetsByUrls(removedPhotos);
+    }
+    if (removedVideos.length > 0) {
+      await deleteAssetsByUrls(removedVideos);
     }
 
     const updatedReview = await prisma.reviews.update({
       where: { id: reviewId },
       data: {
-        categoryId,
-        subCategoryId,
-        productOrService,
-        product,
-        rating,
-        reviewText,
-        photos,
-        videos,
+        reviewText: normalizedReviewText,
+        photos: submittedPhotos,
+        videos: submittedVideos,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              },
+            },
+          },
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
 
-    res.status(200).json(updatedReview);
+    res.status(200).json({
+      success: true,
+      message: 'Review updated successfully',
+      review: updatedReview,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a review and associated media/interactions
+export const deleteReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const reviewId = req.params.id;
+    const { userId } = req.body;
+
+    if (!userId) {
+      throw new ValidationError('userId is required');
+    }
+
+    const existingReview = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        userId: true,
+        photos: true,
+        videos: true,
+      },
+    });
+
+    if (!existingReview) {
+      throw new ValidationError('Review not found');
+    }
+
+    if (existingReview.userId !== userId) {
+      throw new ValidationError('You are not authorized to delete this review');
+    }
+
+    const mediaToDelete = [...(existingReview.photos || []), ...(existingReview.videos || [])];
+    if (mediaToDelete.length > 0) {
+      await deleteAssetsByUrls(mediaToDelete);
+    }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const relatedComments = await tx.reviewComments.findMany({
+        where: { reviewId },
+        select: { id: true },
+      });
+
+  const commentIds = relatedComments.map((comment: { id: string }) => comment.id);
+
+      if (commentIds.length > 0) {
+        await tx.commentLikes.deleteMany({
+          where: {
+            commentId: {
+              in: commentIds,
+            },
+          },
+        });
+      }
+
+      await tx.reviewComments.deleteMany({ where: { reviewId } });
+      await tx.reviewVotes.deleteMany({ where: { reviewId } });
+      await tx.reviews.delete({ where: { id: reviewId } });
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Review deleted successfully',
+    });
   } catch (error) {
     next(error);
   }

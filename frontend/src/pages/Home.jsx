@@ -46,6 +46,30 @@ export default function Home() {
     fetchReviews();
   };
 
+  const handleReviewDeleted = (deletedReviewId) => {
+    setReviews((prevReviews) =>
+      prevReviews.filter((review) => (review.id || review._id) !== deletedReviewId)
+    );
+  };
+
+  const handleReviewUpdated = (updatedReview) => {
+    if (!updatedReview) return;
+    setReviews((prevReviews) =>
+      prevReviews.map((review) => {
+        const currentId = review.id || review._id;
+        const updatedId = updatedReview.id || updatedReview._id;
+        if (!currentId || !updatedId || currentId !== updatedId) {
+          return review;
+        }
+        return {
+          ...review,
+          ...updatedReview,
+          reviewText: updatedReview.reviewText ?? review.reviewText,
+        };
+      })
+    );
+  };
+
   return (
     <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 min-h-screen pb-4 pt-24">
       {/* Welcome Header */}
@@ -148,7 +172,12 @@ export default function Home() {
               </div>
             ) : (
               reviews.map((review) => (
-                <ReviewCard key={review.id} review={review} />
+                <ReviewCard
+                  key={review.id || review._id}
+                  review={review}
+                  onReviewDeleted={handleReviewDeleted}
+                  onReviewUpdated={handleReviewUpdated}
+                />
               ))
             )}
 

@@ -12,15 +12,41 @@ export const AuthProvider = ({ children }) => {
 
   // On app startup, check if user is already logged in
   useEffect(() => {
-    const currentUser = AuthService.getCurrentUser();
-    if (currentUser) setUser(currentUser);
-    setLoading(false);
+    let isMounted = true;
+
+    const initializeAuth = async () => {
+      try {
+        const storedUser = AuthService.getCurrentUser();
+        if (storedUser && isMounted) {
+          setUser(storedUser);
+        }
+
+        const { user: fetchedUser, status } = await AuthService.fetchCurrentUser();
+        if (fetchedUser && isMounted) {
+          setUser(fetchedUser);
+        } else if (!fetchedUser && storedUser && status === 401 && isMounted) {
+          setUser(null);
+        }
+      } catch (error) {
+        console.error('Failed to initialize auth context:', error);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Login function
   const login = async (email, password) => {
     const result = await AuthService.loginUser({ email, password });
-    if (result.success) {
+    if (result.success && result.user) {
       setUser(result.user);
       navigate('/'); // redirect after login
     }
@@ -30,7 +56,7 @@ export const AuthProvider = ({ children }) => {
   // Register function
   const register = async (userData) => {
     const result = await AuthService.registerUser(userData);
-    if (result.success) {
+    if (result.success && result.user) {
       setUser(result.user);
       navigate('/'); // redirect after registration
     }
@@ -53,15 +79,17 @@ export const AuthProvider = ({ children }) => {
     logout
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-gray-700 text-lg">Loading...</p>
-      </div>
-    );
-  }
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {loading ? (
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-700 text-lg">Loading...</p>
+        </div>
+      ) : (
+        children
+      )}
+    </AuthContext.Provider>
+  );
 };
 
 // Custom hook to use auth context

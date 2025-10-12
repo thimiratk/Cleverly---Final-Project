@@ -153,6 +153,30 @@ const Profile = () => {
   const handleEditProfile = () => setIsEditModalOpen(true);
   const handleCloseEditModal = () => setIsEditModalOpen(false);
 
+  const handleReviewDeleted = (deletedReviewId) => {
+    setUserReviews((prevReviews) =>
+      prevReviews.filter((review) => (review.id || review._id) !== deletedReviewId)
+    );
+  };
+
+  const handleReviewUpdated = (updatedReview) => {
+    if (!updatedReview) return;
+    setUserReviews((prevReviews) =>
+      prevReviews.map((review) => {
+        const currentId = review.id || review._id;
+        const updatedId = updatedReview.id || updatedReview._id;
+        if (!currentId || !updatedId || currentId !== updatedId) {
+          return review;
+        }
+        return {
+          ...review,
+          ...updatedReview,
+          reviewText: updatedReview.reviewText ?? review.reviewText,
+        };
+      })
+    );
+  };
+
   // Format the join date
   const formatJoinDate = (dateString) => {
     if (!dateString) return 'Recently';
@@ -318,6 +342,8 @@ const Profile = () => {
                     userName: userData.displayName,
                     userProfilePicture: userData.profilePicture,
                   }}
+                  onReviewDeleted={handleReviewDeleted}
+                  onReviewUpdated={handleReviewUpdated}
                 />
               ))}
             </div>

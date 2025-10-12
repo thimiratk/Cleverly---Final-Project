@@ -189,6 +189,34 @@ router.post('/remove-vote', async (req, res) => {
   }
 });
 
+// Get user's vote status for a review
+router.get('/user-vote/:reviewId/:userId', async (req, res) => {
+  try {
+    const { reviewId, userId } = req.params;
+    const prisma: PrismaClient = req.app.locals.prisma;
+
+    // Check if user has voted
+    const userVote = await prisma.reviewVotes.findUnique({
+      where: {
+        userId_reviewId: {
+          userId,
+          reviewId
+        }
+      }
+    });
+
+    res.json({
+      reviewId,
+      userId,
+      voteType: userVote?.voteType || null,
+      hasVoted: !!userVote
+    });
+  } catch (error) {
+    console.error('Get user vote error:', error);
+    res.status(500).json({ error: 'Failed to get user vote status' });
+  }
+});
+
 // Get interaction stats for a review
 router.get('/stats/:reviewId', async (req, res) => {
   try {

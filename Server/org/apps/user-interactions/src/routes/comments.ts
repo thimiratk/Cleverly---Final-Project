@@ -51,10 +51,15 @@ router.post('/add', async (req, res): Promise<void> => {
       ioInstance.to(`review:${reviewId}`).emit('comment:new', newComment);
     }
 
+    const responseComment = {
+      ...newComment,
+      likedByCurrentUser: false
+    };
+
     res.status(201).json({ 
       success: true, 
       message: 'Comment added successfully',
-      comment: newComment 
+      comment: responseComment 
     });
   } catch (error) {
     console.error('Add comment error:', error);
@@ -66,7 +71,12 @@ router.post('/add', async (req, res): Promise<void> => {
 router.get('/review/:reviewId', async (req, res): Promise<void> => {
   try {
     const { reviewId } = req.params;
-    const { page = 1, limit = 20, sortBy = 'newest' } = req.query;
+    const { page = 1, limit = 20, sortBy = 'newest', userId } = req.query as {
+      page?: string;
+      limit?: string;
+      sortBy?: string;
+      userId?: string;
+    };
     const prisma: PrismaClient = req.app.locals.prisma;
 
     const pageNum = Number(page);
@@ -119,6 +129,50 @@ router.get('/review/:reviewId', async (req, res): Promise<void> => {
       take: limitNum
     });
 
+    let likedSet = new Set<string>();
+
+    if (userId) {
+      const commentIds: string[] = [];
+      const collectIds = (list: typeof comments) => {
+        list.forEach((comment) => {
+          commentIds.push(comment.id);
+          if (comment.replies && comment.replies.length > 0) {
+            // Replies are typed as any because Prisma nested type union
+            collectIds(comment.replies as any);
+          }
+        });
+      };
+
+      collectIds(comments);
+
+      if (commentIds.length > 0) {
+        const likedEntries = await prisma.commentLikes.findMany({
+          where: {
+            userId,
+            commentId: {
+              in: commentIds
+            }
+          },
+          select: {
+            commentId: true
+          }
+        });
+        likedSet = new Set(likedEntries.map((entry) => entry.commentId));
+      }
+    }
+
+    const applyLikedFlag = (list: typeof comments): any[] => {
+      return list.map((comment) => ({
+        ...comment,
+        likedByCurrentUser: likedSet.has(comment.id),
+        replies: comment.replies && comment.replies.length > 0
+          ? applyLikedFlag(comment.replies as any)
+          : comment.replies
+      }));
+    };
+
+    const enrichedComments = applyLikedFlag(comments);
+
     // Get total count
     const totalCount = await prisma.reviewComments.count({
       where: {
@@ -129,7 +183,7 @@ router.get('/review/:reviewId', async (req, res): Promise<void> => {
 
     res.json({
       reviewId,
-      comments,
+      comments: enrichedComments,
       totalCount,
       page: pageNum,
       limit: limitNum,

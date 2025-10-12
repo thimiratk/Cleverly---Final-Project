@@ -1,4 +1,4 @@
-import { getReviews } from './api';
+import { getReviews, deleteReview as deleteReviewApi } from './api';
 
 export const reviewService = {
   // Get reviews by user ID
@@ -32,6 +32,16 @@ export const reviewService = {
       return response;
     } catch (error) {
       console.error('Error fetching reviews:', error);
+      throw error;
+    }
+  },
+
+  deleteReview: async (reviewId, userId) => {
+    try {
+      const response = await deleteReviewApi(reviewId, userId);
+      return response;
+    } catch (error) {
+      console.error('Error deleting review:', error);
       throw error;
     }
   },
