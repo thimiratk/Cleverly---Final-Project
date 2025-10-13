@@ -8,13 +8,14 @@ import * as path from 'path';
 import cors from 'cors';
 import morgan from 'morgan';
 import ratelimit, { ipKeyGenerator } from 'express-rate-limit';
-import swaggerUi from 'swagger-ui-express';
 import cookieParser from "cookie-parser";
-import { error } from 'console';
 import proxy from 'express-http-proxy';
 
 
 const app = express();
+
+// Enable trust proxy for rate limiting to work correctly behind proxies
+app.set('trust proxy', true);
 
 const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_DASH];
 

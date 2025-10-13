@@ -34,6 +34,9 @@ const io = new SocketIOServer(server, {
   }
 });
 
+// Enable trust proxy for rate limiting to work correctly behind proxies
+app.set('trust proxy', true);
+
 // Middleware
 app.use(helmet());
 app.use(cors({
