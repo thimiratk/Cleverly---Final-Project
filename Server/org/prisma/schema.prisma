@@ -44,7 +44,7 @@ model users {
   avatar images?
   
   // User Profile Fields
-  username String? @unique
+  username String?
   firstName String?
   lastName String?
   bio String?
@@ -126,6 +126,18 @@ model reviews {
   downvotesCount Int @default(0)
   commentsCount Int @default(0)
   
+  // Stance detection counts
+  agreeCount Int @default(0)
+  disagreeCount Int @default(0)
+  neutralStanceCount Int @default(0)
+
+  // Automated analysis outputs
+  ruleFraudResult Json?
+  mlFraudResult Json?
+  sentimentResult Json?
+  analysisErrors String[] @default([])
+  analysisCompletedAt DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -142,6 +154,13 @@ model reviewComments {
   replies reviewComments[] @relation("CommentReplies")
   likes commentLikes[]
   likesCount Int @default(0)
+  
+  // Stance detection fields
+  stance String? // AGREE, DISAGREE, NEUTRAL
+  stanceConfidence Float? // 0.0 to 1.0
+  stanceReasoning String?
+  stanceAnalyzedAt DateTime?
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

@@ -10,7 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose port
-EXPOSE 8002
+EXPOSE 8004
 
-# Run the application via the Python module to avoid PATH issues
-CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002"]
+# Run the application
+CMD ["python", "-m", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8004"]

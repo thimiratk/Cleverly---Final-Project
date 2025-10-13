@@ -3,6 +3,39 @@ import { Prisma } from '@prisma/client';
 import prisma from '../../../../packages/libs/prisma';
 import { ValidationError } from '../../../../packages/error-handler';
 import { deleteAssetsByUrls } from '../utils/cloudinary';
+import { runReviewAnalysis } from '../utils/review-analysis';
+
+const toJsonValue = (value: unknown) => {
+  return value === undefined ? undefined : (value as any);
+};
+
+const reviewInclude = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profilePicture: true,
+      avatar: {
+        select: {
+          url: true,
+        },
+      },
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  subCategory: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} as const;
 
 // Create a new review
 export const createReview = async (req: Request, res: Response, next: NextFunction) => {
@@ -21,9 +54,15 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
       userId 
     } = req.body;
 
+    const numericRating = typeof rating === 'string' ? Number.parseInt(rating, 10) : rating;
+
     // Validate required fields
-    if (!productOrService || !product || !rating || !reviewText || !userId) {
+    if (!productOrService || !product || !reviewText || !userId) {
       throw new ValidationError('Missing required fields: productOrService, product, rating, reviewText, userId');
+    }
+
+    if (!Number.isFinite(numericRating)) {
+      throw new ValidationError('rating must be a valid number');
     }
 
     // Check if it's an exceptional review (custom category) or standard review
@@ -36,7 +75,7 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
     const reviewData: any = {
       productOrService,
       product,
-      rating,
+  rating: numericRating,
       reviewText,
       photos: photos || [],
       videos: videos || [],
@@ -58,38 +97,32 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
       }
     }
 
-    const newReview = await prisma.reviews.create({
-      data: reviewData,
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profilePicture: true,
-            avatar: {
-              select: {
-                url: true,
-              }
-            }
-          }
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-          }
-        },
-        subCategory: {
-          select: {
-            id: true,
-            name: true,
-          }
-        }
-      }
+    const analysis = await runReviewAnalysis({
+      reviewText,
+      rating: numericRating,
+      userId,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
     });
 
-    res.status(201).json(newReview);
+    const newReview = await prisma.reviews.create({
+      data: reviewData,
+      include: reviewInclude,
+    });
+
+    const reviewWithAnalysis = await prisma.reviews.update({
+      where: { id: newReview.id },
+      data: {
+        ruleFraudResult: toJsonValue(analysis.ruleFraudResult),
+        mlFraudResult: toJsonValue(analysis.mlFraudResult),
+        sentimentResult: toJsonValue(analysis.sentimentResult),
+        analysisErrors: analysis.errors,
+        analysisCompletedAt: analysis.completedAt,
+      },
+      include: reviewInclude,
+    });
+
+    res.status(201).json(reviewWithAnalysis);
   } catch (error) {
     console.error('Error creating review:', error);
     next(error);
@@ -114,6 +147,7 @@ export const updateReview = async (req: Request, res: Response, next: NextFuncti
         reviewText: true,
         photos: true,
         videos: true,
+        rating: true,
       },
     });
 
@@ -147,40 +181,27 @@ export const updateReview = async (req: Request, res: Response, next: NextFuncti
       await deleteAssetsByUrls(removedVideos);
     }
 
+    const analysis = await runReviewAnalysis({
+      reviewText: normalizedReviewText,
+      rating: existingReview.rating,
+      userId,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    });
+
     const updatedReview = await prisma.reviews.update({
       where: { id: reviewId },
       data: {
         reviewText: normalizedReviewText,
         photos: submittedPhotos,
         videos: submittedVideos,
+        ruleFraudResult: toJsonValue(analysis.ruleFraudResult),
+        mlFraudResult: toJsonValue(analysis.mlFraudResult),
+        sentimentResult: toJsonValue(analysis.sentimentResult),
+        analysisErrors: analysis.errors,
+        analysisCompletedAt: analysis.completedAt,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            profilePicture: true,
-            avatar: {
-              select: {
-                url: true,
-              },
-            },
-          },
-        },
-        category: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        subCategory: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
+      include: reviewInclude,
     });
 
     res.status(200).json({
@@ -197,7 +218,9 @@ export const updateReview = async (req: Request, res: Response, next: NextFuncti
 export const deleteReview = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const reviewId = req.params.id;
-    const { userId } = req.body;
+    const bodyUserId = (req.body as any)?.userId;
+    const queryUserId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const userId = bodyUserId ?? queryUserId;
 
     if (!userId) {
       throw new ValidationError('userId is required');

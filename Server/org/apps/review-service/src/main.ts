@@ -30,6 +30,7 @@ app.get('/', (req, res) => {
 
 // Routes
 import router from './routes/review.router';
+import commentRouter from './routes/comments';
 
 // Swagger UI configuration
 const swaggerOptions = {
@@ -48,6 +49,7 @@ app.get("/docs-json", (req, res) => {
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 app.use('/reviews', router);
+app.use('/comments', commentRouter);
 
 // Error handling middleware should be last
 app.use(errorMiddleware);

@@ -6,8 +6,8 @@ Detects suspicious reviews, fake accounts, and coordinated attacks
 
 import re
 import json
-from datetime import datetime, timedelta
-from typing import List, Dict, Any, Tuple
+from datetime import datetime, timedelta, timezone
+from typing import List, Dict, Any, Tuple, Optional
 from collections import defaultdict, Counter
 import hashlib
 import logging
@@ -87,6 +87,7 @@ class FraudDetectionEngine:
         """
         risk_factors = []
         total_risk_score = 0.0
+        now = datetime.now(timezone.utc)
         
         # Text-based analysis
         text_risks = self._analyze_text_patterns(review_data.get('text', ''))
@@ -94,7 +95,7 @@ class FraudDetectionEngine:
         total_risk_score += text_risks['score']
         
         # User behavior analysis
-        user_risks = self._analyze_user_behavior(review_data)
+        user_risks = self._analyze_user_behavior(review_data, now)
         risk_factors.extend(user_risks['risks'])
         total_risk_score += user_risks['score']
         
@@ -104,7 +105,7 @@ class FraudDetectionEngine:
         total_risk_score += rating_risks['score']
         
         # Temporal analysis
-        time_risks = self._analyze_temporal_patterns(review_data)
+        time_risks = self._analyze_temporal_patterns(review_data, now)
         risk_factors.extend(time_risks['risks'])
         total_risk_score += time_risks['score']
         
@@ -117,14 +118,14 @@ class FraudDetectionEngine:
         risk_level = self._calculate_risk_level(total_risk_score)
         
         # Store data for future pattern analysis
-        self._update_history(review_data)
+        self._update_history(review_data, now)
         
         return {
             'risk_score': round(total_risk_score, 2),
             'risk_level': risk_level,
             'risk_factors': risk_factors,
             'recommendations': self._get_recommendations(risk_level, risk_factors),
-            'timestamp': datetime.now().isoformat()
+            'timestamp': now.isoformat()
         }
     
     def _analyze_text_patterns(self, text: str) -> Dict[str, Any]:
@@ -184,7 +185,7 @@ class FraudDetectionEngine:
         
         return {'risks': risks, 'score': score}
     
-    def _analyze_user_behavior(self, review_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_user_behavior(self, review_data: Dict[str, Any], current_time: datetime) -> Dict[str, Any]:
         """Analyze user behavior patterns"""
         risks = []
         score = 0.0
@@ -198,25 +199,42 @@ class FraudDetectionEngine:
         # Account age check
         account_created = review_data.get('account_created')
         if account_created:
-            account_age = (datetime.now() - datetime.fromisoformat(account_created)).days
-            if account_age < self.config['min_account_age_days']:
+            account_created_dt = self._parse_timestamp(account_created)
+            if account_created_dt is not None:
+                account_age = (current_time - account_created_dt).days
+            else:
+                account_age = None
+
+            if account_age is None:
+                risks.append("Invalid account_created timestamp format")
+                score += 10.0
+            elif account_age < self.config['min_account_age_days']:
                 risks.append(f"Very new account ({account_age} days old)")
                 score += 25.0
         
         # Review velocity check
         user_reviews = self.user_history[user_id]
-        now = datetime.now()
         
         # Daily review count
-        today_reviews = [r for r in user_reviews 
-                        if (now - datetime.fromisoformat(r['timestamp'])).days == 0]
+        today_reviews = []
+        for record in user_reviews:
+            record_timestamp = self._parse_timestamp(record.get('timestamp'))
+            if record_timestamp is None:
+                continue
+            if (current_time - record_timestamp).days == 0:
+                today_reviews.append(record)
         if len(today_reviews) > self.config['max_reviews_per_day']:
             risks.append(f"Too many reviews today ({len(today_reviews)})")
             score += 30.0
         
         # Hourly review count
-        recent_reviews = [r for r in user_reviews 
-                         if (now - datetime.fromisoformat(r['timestamp'])).seconds < 3600]
+        recent_reviews = []
+        for record in user_reviews:
+            record_timestamp = self._parse_timestamp(record.get('timestamp'))
+            if record_timestamp is None:
+                continue
+            if (current_time - record_timestamp).total_seconds() < 3600:
+                recent_reviews.append(record)
         if len(recent_reviews) > self.config['max_reviews_per_hour']:
             risks.append(f"Too many reviews this hour ({len(recent_reviews)})")
             score += 35.0
@@ -263,7 +281,7 @@ class FraudDetectionEngine:
         
         return {'risks': risks, 'score': score}
     
-    def _analyze_temporal_patterns(self, review_data: Dict[str, Any]) -> Dict[str, Any]:
+    def _analyze_temporal_patterns(self, review_data: Dict[str, Any], current_time: datetime) -> Dict[str, Any]:
         """Analyze timing patterns"""
         risks = []
         score = 0.0
@@ -271,10 +289,9 @@ class FraudDetectionEngine:
         timestamp_str = review_data.get('timestamp')
         if not timestamp_str:
             return {'risks': risks, 'score': score}
-        
-        try:
-            timestamp = datetime.fromisoformat(timestamp_str)
-        except:
+
+        timestamp = self._parse_timestamp(timestamp_str)
+        if timestamp is None:
             risks.append("Invalid timestamp format")
             score += 10.0
             return {'risks': risks, 'score': score}
@@ -305,7 +322,8 @@ class FraudDetectionEngine:
                 score += 25.0
         
         # User agent analysis
-        user_agent = review_data.get('user_agent', '').lower()
+        user_agent_raw = review_data.get('user_agent')
+        user_agent = user_agent_raw.lower() if isinstance(user_agent_raw, str) else ''
         if user_agent:
             if 'bot' in user_agent or 'crawler' in user_agent:
                 risks.append("Bot-like user agent")
@@ -396,14 +414,39 @@ class FraudDetectionEngine:
         
         return recommendations
     
-    def _update_history(self, review_data: Dict[str, Any]) -> None:
+    def _parse_timestamp(self, value: Any) -> Optional[datetime]:
+        """Parse ISO timestamps and normalise everything to UTC."""
+        if not value:
+            return None
+
+        if isinstance(value, datetime):
+            if value.tzinfo is None:
+                return value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc)
+
+        text = str(value).strip()
+        if not text:
+            return None
+
+        if text.endswith('Z'):
+            text = text[:-1] + '+00:00'
+
+        try:
+            parsed = datetime.fromisoformat(text)
+            if parsed.tzinfo is None:
+                return parsed.replace(tzinfo=timezone.utc)
+            return parsed.astimezone(timezone.utc)
+        except ValueError:
+            return None
+
+    def _update_history(self, review_data: Dict[str, Any], current_time: datetime) -> None:
         """Update historical data for pattern analysis"""
         user_id = review_data.get('user_id')
         ip_address = review_data.get('ip_address')
         
         if user_id:
             self.user_history[user_id].append({
-                'timestamp': review_data.get('timestamp', datetime.now().isoformat()),
+                'timestamp': review_data.get('timestamp', current_time.isoformat()),
                 'rating': review_data.get('rating'),
                 'text_length': len(review_data.get('text', ''))
             })
@@ -414,7 +457,7 @@ class FraudDetectionEngine:
         
         if ip_address:
             self.ip_history[ip_address].append({
-                'timestamp': review_data.get('timestamp', datetime.now().isoformat()),
+                'timestamp': review_data.get('timestamp', current_time.isoformat()),
                 'user_id': user_id
             })
     
@@ -437,11 +480,9 @@ class FraudDetectionEngine:
         # Time clustering - many reviews in short time
         timestamps = []
         for review in reviews:
-            try:
-                ts = datetime.fromisoformat(review.get('timestamp', ''))
+            ts = self._parse_timestamp(review.get('timestamp'))
+            if ts is not None:
                 timestamps.append(ts)
-            except:
-                continue
         
         if timestamps:
             timestamps.sort()

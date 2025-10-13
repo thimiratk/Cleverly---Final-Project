@@ -135,7 +135,9 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
     
     if (validFiles.length === 0) return;
     
-    try {
+  let reviewPayload = null;
+
+  try {
       const newMedia = validFiles.map(file => ({
         id: Math.random().toString(36),
         url: URL.createObjectURL(file),
@@ -270,7 +272,9 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
     setUploadProgress(0);
     setUploadStage('Preparing upload...');
     
-    try {
+  let reviewPayload = null;
+
+  try {
       console.log('Starting review submission...');
       console.log('User data:', user);
       console.log('Review data before processing:', reviewData);
@@ -323,7 +327,7 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
       console.log('Uploaded media URLs:', { photos: uploadedPhotos, videos: uploadedVideos });
 
       // Prepare review data with uploaded URLs
-      const reviewPayload = {
+  reviewPayload = {
         ...reviewData,
         photos: uploadedPhotos,
         videos: uploadedVideos,
@@ -360,7 +364,9 @@ export default function ReviewPostUI({ onClose, onReviewCreated }) {
       console.error('Error creating review:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      console.error('Review payload:', reviewPayload);
+      if (reviewPayload) {
+        console.error('Review payload:', reviewPayload);
+      }
       
       let errorMessage = 'Failed to create review. Please try again.';
       
