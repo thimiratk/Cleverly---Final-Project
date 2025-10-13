@@ -1,19 +1,52 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from model import FraudModel
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, UploadFile, Form # to handle review creation
+from __future__ import annotations
 
-app = FastAPI()
+import logging
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+
+from model import FraudModel
+
+
+logger = logging.getLogger(__name__)
+
+
+app = FastAPI(title="ML Fraud Detection Service", version="1.1.0")
 fraud_model = FraudModel()
 
-class Review(BaseModel):
+
+class DetectionRequest(BaseModel):
     text: str
 
-@app.post("/detection")
-def detect_fraud(review: Review):
-    label = fraud_model.predict(review.text)
-    return {"review": review.text, "label": label}
+
+class DetectionResponse(BaseModel):
+    review: str
+    label: str
+    confidence: float
+
+
+class HealthResponse(BaseModel):
+    status: str
+
+
+@app.get("/health", response_model=HealthResponse)
+async def health() -> HealthResponse:
+    return HealthResponse(status="ok")
+
+
+@app.post("/detection", response_model=DetectionResponse)
+async def detect_fraud(review: DetectionRequest) -> DetectionResponse:
+    try:
+        label, confidence = fraud_model.predict(review.text)
+    except ValueError as error:
+        raise HTTPException(status_code=400, detail=str(error)) from error
+    except RuntimeError as error:
+        logger.exception("Fraud model unavailable")
+        raise HTTPException(status_code=500, detail=str(error)) from error
+
+    return DetectionResponse(review=review.text, label=label, confidence=confidence)
+
 
 app.add_middleware(
     CORSMiddleware,

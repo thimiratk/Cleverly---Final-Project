@@ -13,6 +13,7 @@ services:
       - rule-fraud-service
       - ml-fraud-service
       - sentiment-service
+      - stance-detection-service
     networks:
       - cleverly-network
     restart: unless-stopped
@@ -55,6 +56,21 @@ services:
       - "8003:8003"
     environment:
       - PORT=8003
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+  # Stance Detection Service
+  stance-detection-service:
+    build:
+      context: ../stanceDetection
+      dockerfile: Dockerfile
+    container_name: stance-detection-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     networks:
       - cleverly-network
     restart: unless-stopped
