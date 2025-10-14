@@ -17,7 +17,16 @@ const app = express();
 // Configure trust proxy more securely - trust only the first proxy
 app.set('trust proxy', 1);
 
-const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_DASH];
+const allowedOrigins = [
+  process.env.FRONTEND_URL, 
+  process.env.ADMIN_DASH,
+  process.env.MOD_DASH,
+  // Development URLs for dashboards
+  'https://animated-space-umbrella-g4x9q94q5gv53p47-5175.app.github.dev', // Mod-dash dev server
+  'https://animated-space-umbrella-g4x9q94q5gv53p47-5174.app.github.dev', // Admin-dash dev server
+  'http://localhost:5175', // Local mod-dash
+  'http://localhost:5174'  // Local admin-dash
+];
 
 app.use(cors({
   origin: function (origin, callback) {
@@ -87,7 +96,7 @@ app.use(["/api/login", "/api/register", "/api/verify", "/api/logout", "/api/refr
 }));
 
 // Route admin requests to auth service (admin panel functionality)
-app.use(["/api/admin", "/api/users"], proxy("http://localhost:6001", {
+app.use(["/api/admin", "/api/users", "/api/moderators"], proxy("http://localhost:6001", {
   proxyReqPathResolver: (req) => {
     return req.originalUrl.replace('/api', '');
   },

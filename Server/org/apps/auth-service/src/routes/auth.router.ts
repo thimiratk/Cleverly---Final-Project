@@ -2,6 +2,7 @@ import express,{ Router } from 'express';
 import passport from 'passport';
 import {getUser, refreshToken,resetUserPassword, userForgotPassword, userLogin, userLogout, userRegistration, userVerifyForgotpasswordOtp, verifyUser, googleAuthCallback, getUserCount } from '../controllers/auth_controller';
 import isAuthenticated from '@packages/middleware/isAuthenticated';
+import moderatorRouter from './moderator.router';
 
 const router: Router = express.Router();
 
@@ -23,5 +24,8 @@ router.get('/auth/google/callback', passport.authenticate('google', { session: f
 router.get('/callback', passport.authenticate('google', { session: false, failureRedirect: '/login' }), googleAuthCallback);
 
 router.get('/users/count', getUserCount);
+
+// Moderator routes
+router.use('/', moderatorRouter);
 
 export default router;

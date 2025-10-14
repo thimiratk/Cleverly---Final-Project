@@ -66,9 +66,10 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
     }
 
     // Check if it's an exceptional review (custom category) or standard review
-    const isExceptional = (!categoryId || categoryId.trim() === '') && (exceptionalCategory || exceptionalSubCategory);
+    // Prioritize exceptional categories - if exceptionalCategory is provided, it's exceptional
+    const isExceptional = Boolean(exceptionalCategory || exceptionalSubCategory);
     
-    if (!isExceptional && (!categoryId || categoryId.trim() === '')) {
+    if (!isExceptional && (!categoryId || (typeof categoryId === 'string' && categoryId.trim() === ''))) {
       throw new ValidationError('Either categoryId or exceptionalCategory is required');
     }
 
@@ -89,10 +90,10 @@ export const createReview = async (req: Request, res: Response, next: NextFuncti
       reviewData.exceptionalSubCategory = exceptionalSubCategory;
     } else {
       // Handle standard categories - only add if not empty
-      if (categoryId && categoryId.trim() !== '') {
+      if (categoryId && typeof categoryId === 'string' && categoryId.trim() !== '') {
         reviewData.categoryId = categoryId;
       }
-      if (subCategoryId && subCategoryId.trim() !== '') {
+      if (subCategoryId && typeof subCategoryId === 'string' && subCategoryId.trim() !== '') {
         reviewData.subCategoryId = subCategoryId;
       }
     }

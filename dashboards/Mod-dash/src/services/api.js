@@ -1,12 +1,33 @@
 // API Configuration
 const API_GATEWAY_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api';
 
-// Generic API call function (for admin dashboard endpoints)
+// Helper function to get authentication token
+const getAuthToken = () => {
+  // Try to get token from localStorage first
+  const token = localStorage.getItem('accessToken');
+  if (token) return token;
+  
+  // Fallback to cookies if available
+  const cookies = document.cookie.split(';');
+  for (let cookie of cookies) {
+    const [name, value] = cookie.trim().split('=');
+    if (name === 'accessToken') {
+      return value;
+    }
+  }
+  
+  return null;
+};
+
+// Generic API call function (for moderator dashboard endpoints)
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_GATEWAY_URL}${endpoint}`;
+  const token = getAuthToken();
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
@@ -29,9 +50,12 @@ const apiCall = async (endpoint, options = {}) => {
 // Domain API call function  
 const domainApiCall = async (endpoint, options = {}) => {
   const url = `${API_GATEWAY_URL}${endpoint}`;
+  const token = getAuthToken();
+  
   const config = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` }),
       ...options.headers,
     },
     ...options,
