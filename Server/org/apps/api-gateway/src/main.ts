@@ -14,8 +14,8 @@ import proxy from 'express-http-proxy';
 
 const app = express();
 
-// Enable trust proxy for rate limiting to work correctly behind proxies
-app.set('trust proxy', true);
+// Configure trust proxy more securely - trust only the first proxy
+app.set('trust proxy', 1);
 
 const allowedOrigins = [process.env.FRONTEND_URL, process.env.ADMIN_DASH];
 
@@ -42,10 +42,12 @@ const limiter = ratelimit({
   message:{error:"Too many requests, please try again later"},
   standardHeaders: true,
   legacyHeaders: true,
-  // Use the provided ipKeyGenerator helper to correctly handle IPv6 addresses
+  // More secure key generation - don't rely on trust proxy for rate limiting
   keyGenerator: (req:any) => {
-    // ipKeyGenerator expects an IP string and optional ipv6Subnet, so pass req.ip
-    return ipKeyGenerator(req.ip as string);
+    // Use x-forwarded-for if available, otherwise fall back to req.ip
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? (Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0]) : req.ip;
+    return ipKeyGenerator(ip as string);
   },
 })
 

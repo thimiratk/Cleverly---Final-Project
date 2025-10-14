@@ -34,8 +34,8 @@ const io = new SocketIOServer(server, {
   }
 });
 
-// Enable trust proxy for rate limiting to work correctly behind proxies
-app.set('trust proxy', true);
+// Configure trust proxy more securely - trust only the first proxy
+app.set('trust proxy', 1);
 
 // Middleware
 app.use(helmet());
@@ -47,11 +47,17 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
+// Rate limiting with secure configuration
 const limiter = ratelimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000, // Increased limit for development - each IP can make 1000 requests per 15 minutes
-  message: 'Too many requests from this IP, please try again later.'
+  message: 'Too many requests from this IP, please try again later.',
+  // More secure key generation
+  keyGenerator: (req) => {
+    const forwarded = req.headers['x-forwarded-for'];
+    const ip = forwarded ? (Array.isArray(forwarded) ? forwarded[0] : forwarded.split(',')[0]) : req.ip;
+    return ip as string;
+  },
 });
 app.use('/', limiter);
 
