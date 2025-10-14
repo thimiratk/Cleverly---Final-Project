@@ -7,13 +7,21 @@ interface AuthenticatedRequest extends Request {
 
 const isAuthenticated = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    // First, try to get token from Authorization header
+    let token = req.headers.authorization?.replace('Bearer ', '');
+    
+    // If no Authorization header, try to get token from cookies
+    if (!token && req.cookies) {
+      token = req.cookies.accessToken;
+    }
     
     if (!token) {
       return res.status(401).json({ error: 'No token provided' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
+    // Use ACCESS_TOKEN_SECRET for token verification (matching the login controller)
+    const secret = process.env.ACCESS_TOKEN_SECRET || process.env.JWT_SECRET || 'fallback_secret';
+    const decoded = jwt.verify(token, secret);
     req.user = decoded;
     next();
   } catch (error) {

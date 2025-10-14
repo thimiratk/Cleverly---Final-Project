@@ -154,4 +154,33 @@ export const VerifyForgotpasswordOtp = async(req:Request,res:Response,next:NextF
         
 }
 
+// Middleware to check if user is admin
+export const isAdmin = async (req: any, res: Response, next: NextFunction) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ error: 'Authentication required' });
+        }
+
+        // Check if user role is admin or if it's a moderator role
+        if (req.user.role === 'admin' || req.user.role === 'moderator') {
+            return next();
+        }
+
+        // If user doesn't have admin/moderator role in token, check database
+        const user = await prisma.users.findUnique({
+            where: { id: req.user.id },
+            select: { role: true }
+        });
+
+        if (!user || (user.role !== 'ADMIN' && user.role !== 'MODERATOR')) {
+            return res.status(403).json({ error: 'Admin access required' });
+        }
+
+        next();
+    } catch (error) {
+        console.error('Admin check error:', error);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
 

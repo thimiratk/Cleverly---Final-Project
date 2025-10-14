@@ -42,6 +42,7 @@ model users {
   password String?
   provider String?
   avatar images?
+  role UserRole @default(USER)
   
   // User Profile Fields
   username String?
@@ -84,6 +85,8 @@ model categories {
   name String
   subCategories subCategories[]
   reviews reviews[]
+  moderators moderators[] @relation(fields: [moderatorIds], references: [id])
+  moderatorIds String[] @db.ObjectId
 }
 
 model subCategories {
@@ -212,6 +215,34 @@ model notifications {
   data Json? // Additional data for the notification
   relatedUserId String? @db.ObjectId // User who triggered the notification
   isRead Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model moderators {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  username String @unique
+  email String @unique
+  password String
+  name String?
+  
+  // Assigned categories for moderation
+  assignedCategories String[] @db.ObjectId
+  categories categories[] @relation(fields: [assignedCategories], references: [id])
+  
+  // Status and permissions
+  isActive Boolean @default(true)
+  permissions String[] @default(["MODERATE_REVIEWS", "MANAGE_COMMENTS", "BAN_USERS"])
+  
+  // Audit fields
+  createdBy String? @db.ObjectId // Admin who created this moderator
+  lastLogin DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

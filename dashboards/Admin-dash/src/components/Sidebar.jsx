@@ -1,8 +1,17 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { Home, Users, FileText, BarChart3, Menu, X, Shield, Award, Star, TrendingUp, AlertTriangle, CheckCircle, Globe, Tags } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Home, Users, FileText, BarChart3, Menu, X, Shield, Award, Star, TrendingUp, AlertTriangle, CheckCircle, Globe, Tags, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection }) => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   const menuItems = [
     { id: 'dashboard', label: 'Platform Overview', icon: Home, path: '/' },
     { id: 'review-verification', label: 'Review Verification', icon: CheckCircle, path: '/review-verification' },
@@ -80,8 +89,33 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection 
 
       {/* Footer */}
       <div className="sticky bottom-0 bg-blue-600 p-4 border-t border-blue-500/30">
+        {/* User Info */}
+        {sidebarOpen && (
+          <div className="mb-3 p-2 bg-blue-700 rounded-lg">
+            <p className="text-sm font-medium">{user?.name || 'Admin'}</p>
+            <p className="text-xs text-blue-200">{user?.email}</p>
+          </div>
+        )}
+        
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center px-2 py-2 text-left hover:bg-blue-700 rounded-lg transition-colors text-red-200 hover:text-red-100"
+        >
+          <LogOut size={20} />
+          <span
+            className={`ml-3 whitespace-nowrap transition-all duration-300 ease-in-out
+              ${sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0 overflow-hidden'}
+            `}
+            style={{ display: 'inline-block' }}
+          >
+            Logout
+          </span>
+        </button>
+
+        {/* Status */}
         <div 
-          className={`flex items-center space-x-2 whitespace-nowrap transition-all duration-300 ease-in-out
+          className={`flex items-center space-x-2 whitespace-nowrap transition-all duration-300 ease-in-out mt-2
             ${sidebarOpen ? 'opacity-100 max-w-xs' : 'opacity-0 max-w-0 overflow-hidden'}
           `}
           style={{ display: 'flex' }}

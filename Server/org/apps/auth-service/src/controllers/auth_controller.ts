@@ -92,13 +92,13 @@ export const userLogin = async(req:Request,res:Response,next:NextFunction)=>{
         // Generate JWT token (implementation omitted for brevity)
 
         const accessToken = jwt.sign(
-  { id: user.id, role: "user" },   // changed userId → id
+  { id: user.id, role: user.role.toLowerCase() },   // Use actual user role from database
   process.env.ACCESS_TOKEN_SECRET as string,
   { expiresIn: '1h' }
 );
 
 const refreshToken = jwt.sign(
-  { id: user.id, role: "user" },   // changed userId → id
+  { id: user.id, role: user.role.toLowerCase() },   // Use actual user role from database
   process.env.REFRESH_TOKEN_SECRET as string,
   { expiresIn: '7h' }
 );
@@ -109,7 +109,7 @@ const refreshToken = jwt.sign(
 
         res.status(200).json({ 
             message: "Login successful",
-            user: { id: user.id, email: user.email, name: user.name },
+            user: { id: user.id, email: user.email, name: user.name, role: user.role },
             accessToken: accessToken // Include token in response for cross-origin access
         });
     } catch (error) {
@@ -175,14 +175,14 @@ export const refreshToken = async (req:Request,res:Response,next:NextFunction)=>
             ) as {id:string,role:string};
             
         if(!decoded || !decoded.id || !decoded.role){
-                return  new JsonWebTokenError("Invalid token payload, please login again");
+                return next(new JsonWebTokenError("Invalid token payload, please login again"));
             }
         // let account;
         // if(decoded.role === 'user')
         const users =await prisma.users.findUnique({ where: { id: decoded.id } });
         
         if (!users) {
-            return new AuthError("User not found, please login again")
+            return next(new AuthError("User not found, please login again"));
         }
             // Generate new tokens
             const newAccessToken = jwt.sign(

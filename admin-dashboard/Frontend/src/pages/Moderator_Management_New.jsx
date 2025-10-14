@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Shield, Mail, Phone, Users, Plus, Edit, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
 import Navbar from '../components/Navbar';
+import { moderatorAPI, categoriesAPI } from '../services/api';
 import CreateModeratorModal from '../components/CreateModeratorModal';
-import { moderatorAPI, domainAPI } from '../services/api';
 
 const ModeratorManagement = () => {
   const [moderators, setModerators] = useState([]);
@@ -38,7 +38,7 @@ const ModeratorManagement = () => {
 
   const fetchCategories = async () => {
     try {
-      const data = await domainAPI.getCategories();
+      const data = await categoriesAPI.getAll();
       setCategories(data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);

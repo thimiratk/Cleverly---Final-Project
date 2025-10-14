@@ -19,7 +19,7 @@ const getAuthToken = () => {
   return null;
 };
 
-// Generic API call function (for admin dashboard endpoints)
+// Generic API call function (for moderator dashboard endpoints)
 const apiCall = async (endpoint, options = {}) => {
   const url = `${API_GATEWAY_URL}${endpoint}`;
   const token = getAuthToken();
@@ -269,34 +269,5 @@ export const settingsAPI = {
     apiCall(`/settings/${key}`, {
       method: 'PUT',
       body: JSON.stringify({ value }),
-    }),
-};
-
-// Moderator API calls
-export const moderatorAPI = {
-  getAll: (params = {}) => {
-    const queryString = new URLSearchParams(params).toString();
-    return apiCall('/moderators' + (queryString ? `?${queryString}` : ''));
-  },
-  getById: (id) => apiCall(`/moderators/${id}`),
-  create: (moderatorData) => 
-    apiCall('/moderators', {
-      method: 'POST',
-      body: JSON.stringify(moderatorData),
-    }),
-  update: (id, moderatorData) => 
-    apiCall(`/moderators/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(moderatorData),
-    }),
-  delete: (id) => 
-    apiCall(`/moderators/${id}`, {
-      method: 'DELETE',
-    }),
-  getStats: () => apiCall('/moderators/stats'),
-  login: (credentials) =>
-    apiCall('/moderators/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
     }),
 };
