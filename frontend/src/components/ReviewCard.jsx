@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaStar, FaArrowUp, FaArrowDown, FaComment, FaShare, FaEllipsisH, FaUser } from 'react-icons/fa';
+import { FaStar, FaArrowUp, FaArrowDown, FaComment, FaShare, FaEllipsisH, FaUser, FaCheckCircle, FaFlag, FaExclamationTriangle } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import { upvoteReview, downvoteReview, removeVote, getUserVoteStatus, getInteractionStats, updateReview } from '../services/api';
 import { userProfileService } from '../services/userProfile.service';
@@ -31,7 +31,13 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
   const [isFollowed, setIsFollowed] = useState(false);
   const [isFollowLoading, setIsFollowLoading] = useState(false);
   const [followError, setFollowError] = useState('');
+  const [userBadges, setUserBadges] = useState([]);
   const optionsRef = useRef(null);
+
+  // Stance counts state for real-time updates
+  const [agreeCount, setAgreeCount] = useState(review?.agreeCount || 0);
+  const [disagreeCount, setDisagreeCount] = useState(review?.disagreeCount || 0);
+  const [neutralStanceCount, setNeutralStanceCount] = useState(review?.neutralStanceCount || 0);
 
   // Handle different data structures from API
   const reviewData = {
@@ -45,12 +51,17 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
     },
     product: review?.product || review?.productOrService || review?.title || 'Product Review',
     rating: Number(review?.rating) || 0,
-  description: currentReviewText,
+    description: currentReviewText,
+    reviewText: review?.reviewText || currentReviewText,
     images: review?.photos || review?.pictures || review?.images || (review?.image ? [review.image] : []),
     upvotes: review?.upvotesCount || review?.upvotes || review?.likes || 0,
     downvotes: review?.downvotesCount || review?.downvotes || review?.dislikes || 0,
     commentsCount: review?.commentsCount || review?.comments || 0,
-    time: review?.createdAt || review?.date || review?.timestamp || new Date().toISOString()
+    time: review?.createdAt || review?.date || review?.timestamp || new Date().toISOString(),
+    // Stance counts - use state variables for real-time updates
+    agreeCount: agreeCount,
+    disagreeCount: disagreeCount,
+    neutralStanceCount: neutralStanceCount
   };
 
   const reviewAuthorId = reviewData.user?.id ? reviewData.user.id.toString() : null;
@@ -74,11 +85,27 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
 
   // Debug: Log review data structure (can be removed later)
   console.log('ReviewCard - Original review:', review);
+  console.log('ReviewCard - Original review.reviewText:', review?.reviewText);
   console.log('ReviewCard - Mapped reviewData:', reviewData);
+  console.log('ReviewCard - Mapped reviewData.reviewText:', reviewData.reviewText);
+  console.log('ReviewCard - reviewText length:', reviewData.reviewText?.length);
+  console.log('ReviewCard - Stance counts:', {
+    agree: reviewData.agreeCount,
+    disagree: reviewData.disagreeCount,
+    neutral: reviewData.neutralStanceCount,
+    total: reviewData.agreeCount + reviewData.disagreeCount + reviewData.neutralStanceCount
+  });
 
   useEffect(() => {
     setIsDeleted(false);
   }, [reviewData.id]);
+
+  // Sync stance counts when review prop changes
+  useEffect(() => {
+    setAgreeCount(review?.agreeCount || 0);
+    setDisagreeCount(review?.disagreeCount || 0);
+    setNeutralStanceCount(review?.neutralStanceCount || 0);
+  }, [review?.agreeCount, review?.disagreeCount, review?.neutralStanceCount]);
 
   useEffect(() => {
     const handleFollowStatusChange = (event) => {
@@ -171,6 +198,23 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
     const timeoutId = setTimeout(loadUserVoteStatus, 100);
     return () => clearTimeout(timeoutId);
   }, [currentUser?.id, reviewData.id]); // Only depend on IDs to prevent unnecessary re-renders
+
+  // Load user badges
+  useEffect(() => {
+    const loadUserBadges = async () => {
+      if (!reviewData.user?.id) return;
+
+      try {
+        const userProfile = await userProfileService.getUserProfile(reviewData.user.id);
+        setUserBadges(userProfile.badges || []);
+      } catch (error) {
+        console.error('Error loading user badges:', error);
+        setUserBadges([]);
+      }
+    };
+
+    loadUserBadges();
+  }, [reviewData.user?.id]);
 
   if (isDeleted) {
     return null;
@@ -309,6 +353,20 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
   // Handle comment count updates from CommentSection
   const handleCommentCountChange = (newCount) => {
     setCommentsCount(newCount);
+  };
+
+  // Handle stance count updates from CommentSection (real-time updates)
+  const handleStanceCountsChange = (stanceCounts) => {
+    console.log('[ReviewCard] Updating stance counts:', stanceCounts);
+    if (stanceCounts.agreeCount !== undefined) {
+      setAgreeCount(stanceCounts.agreeCount);
+    }
+    if (stanceCounts.disagreeCount !== undefined) {
+      setDisagreeCount(stanceCounts.disagreeCount);
+    }
+    if (stanceCounts.neutralStanceCount !== undefined) {
+      setNeutralStanceCount(stanceCounts.neutralStanceCount);
+    }
   };
 
   const handleDeleteReview = async () => {
@@ -539,13 +597,47 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
             )}
             <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
           </div>
-          <div>
-            <h4 
-              className="font-bold text-gray-900 text-base cursor-pointer hover:text-purple-600 transition-colors"
-              onClick={handleProfileClick}
-            >
-              {reviewData.user.name}
-            </h4>
+          <div className="flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h4 
+                className="font-bold text-gray-900 text-base cursor-pointer hover:text-purple-600 transition-colors"
+                onClick={handleProfileClick}
+              >
+                {reviewData.user.name}
+              </h4>
+              
+              {/* User Badges */}
+              {userBadges.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {userBadges.slice(0, 3).map((badge) => (
+                    <div
+                      key={badge.id || badge._id}
+                      className="group relative"
+                      title={badge.name}
+                    >
+                      {badge.imageUrl ? (
+                        <img
+                          src={badge.imageUrl}
+                          alt={badge.name}
+                          className="w-5 h-5 object-contain"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center text-xs">
+                          🏆
+                        </div>
+                      )}
+                      {/* Tooltip */}
+                      <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                        {badge.name}
+                      </div>
+                    </div>
+                  ))}
+                  {userBadges.length > 3 && (
+                    <span className="text-xs text-gray-500 font-medium">+{userBadges.length - 3}</span>
+                  )}
+                </div>
+              )}
+            </div>
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <span>⏰</span> {formatTime(reviewData.time)}
             </p>
@@ -602,7 +694,7 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
 
       {/* Product & Rating */}
       <div className="px-5 pb-3">
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
           <span className="text-xl font-bold text-gray-900 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             {reviewData.product}
           </span>
@@ -615,6 +707,35 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
             ))}
             <span className="text-sm font-bold text-gray-700 ml-1">{reviewData.rating}</span>
           </div>
+          
+          {/* Verification Status Badge */}
+          {review?.postState === 'VERIFIED' && (
+            <div className="flex items-center gap-1 bg-blue-50 px-3 py-1 rounded-full border border-blue-200">
+              <FaCheckCircle className="text-blue-600 w-3 h-3" />
+              <span className="text-xs font-semibold text-blue-600">Verified</span>
+            </div>
+          )}
+          
+          {review?.postState === 'PENDING' && (
+            <div className="flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full border border-gray-300">
+              <FaExclamationTriangle className="text-gray-600 w-3 h-3" />
+              <span className="text-xs font-semibold text-gray-600">Unverified</span>
+            </div>
+          )}
+          
+          {review?.postState === 'FLAGGED' && (
+            <div className="flex items-center gap-1 bg-orange-50 px-3 py-1 rounded-full border border-orange-300">
+              <FaFlag className="text-orange-600 w-3 h-3" />
+              <span className="text-xs font-semibold text-orange-600">Under Review</span>
+            </div>
+          )}
+          
+          {review?.postState === 'REJECTED' && isOwner && (
+            <div className="flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full border border-red-300">
+              <FaExclamationTriangle className="text-red-600 w-3 h-3" />
+              <span className="text-xs font-semibold text-red-600">Rejected</span>
+            </div>
+          )}
         </div>
         
         {/* Review Text with See More functionality */}
@@ -701,6 +822,74 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
         </div>
       )}
 
+      {/* Stance Detection Bar - DEBUG: Always show to verify API data */}
+      {true && ( // TODO: Change back to: (reviewData.agreeCount > 0 || reviewData.disagreeCount > 0 || reviewData.neutralStanceCount > 0)
+        <div className="px-5 pb-4">
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-semibold text-gray-600 uppercase tracking-wide">Comment Sentiment</h4>
+              <span className="text-xs text-gray-500">
+                {reviewData.agreeCount + reviewData.disagreeCount + reviewData.neutralStanceCount} analyzed
+              </span>
+            </div>
+            
+            {/* Stance Bar */}
+            <div className="flex h-3 w-full rounded-full overflow-hidden bg-gray-200 mb-3">
+              {reviewData.agreeCount > 0 && (
+                <div 
+                  className="bg-green-500 transition-all duration-500"
+                  style={{ 
+                    width: `${(reviewData.agreeCount / (reviewData.agreeCount + reviewData.disagreeCount + reviewData.neutralStanceCount)) * 100}%` 
+                  }}
+                  title={`${reviewData.agreeCount} Agree`}
+                />
+              )}
+              {reviewData.disagreeCount > 0 && (
+                <div 
+                  className="bg-red-500 transition-all duration-500"
+                  style={{ 
+                    width: `${(reviewData.disagreeCount / (reviewData.agreeCount + reviewData.disagreeCount + reviewData.neutralStanceCount)) * 100}%` 
+                  }}
+                  title={`${reviewData.disagreeCount} Disagree`}
+                />
+              )}
+              {reviewData.neutralStanceCount > 0 && (
+                <div 
+                  className="bg-gray-400 transition-all duration-500"
+                  style={{ 
+                    width: `${(reviewData.neutralStanceCount / (reviewData.agreeCount + reviewData.disagreeCount + reviewData.neutralStanceCount)) * 100}%` 
+                  }}
+                  title={`${reviewData.neutralStanceCount} Neutral`}
+                />
+              )}
+            </div>
+            
+            {/* Stance Legend */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-green-500 rounded-sm"></div>
+                <span className="text-gray-700 font-medium">{reviewData.agreeCount} Agree</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-red-500 rounded-sm"></div>
+                <span className="text-gray-700 font-medium">{reviewData.disagreeCount} Disagree</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-gray-400 rounded-sm"></div>
+                <span className="text-gray-700 font-medium">{reviewData.neutralStanceCount} Neutral</span>
+              </div>
+            </div>
+            
+            {/* DEBUG: Show when no comments analyzed yet */}
+            {(reviewData.agreeCount === 0 && reviewData.disagreeCount === 0 && reviewData.neutralStanceCount === 0) && (
+              <div className="mt-2 text-xs text-gray-500 italic text-center">
+                No comments analyzed yet. Post a comment to see sentiment analysis!
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Actions */}
       <div className="px-5 pb-5">
         <div className="flex items-center justify-between">
@@ -750,10 +939,14 @@ function ReviewCard({ review, onReviewDeleted, onReviewUpdated, onDelete, curren
       </div>
 
       {/* Comments Section */}
+      {showComments && console.log('[ReviewCard] Passing to CommentSection - reviewText:', reviewData.reviewText, 'length:', reviewData.reviewText?.length)}
       <CommentSection 
         reviewId={reviewData.id}
+        reviewText={reviewData.reviewText}
+        reviewAuthorId={reviewAuthorId}
         isVisible={showComments}
         onCommentCountChange={handleCommentCountChange}
+        onStanceCountsChange={handleStanceCountsChange}
       />
     </div>
   );

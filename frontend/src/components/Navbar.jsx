@@ -1,28 +1,111 @@
 import React, { useState } from "react";
-import { Search, Plus, Bell, Home, Flame, Compass, X, User } from "lucide-react";
+import { Search, Plus, Home, Flame, Compass, X, User, Bell } from "lucide-react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useUser } from "../hooks/useUser";
 import { useQueryClient } from "@tanstack/react-query";
 import API from "../services/api";
 import CreateReview from "./CreateReview/";
+import NotificationDropdown from "./NotificationDropdown";
+import ProfileDropdown from "./ProfileDropdown";
 import logo from "../assets/logo.jpeg";
 
 export default function Navbar() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const { user, isLoading } = useUser();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const location = useLocation();
   
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);  const handleLogout = async () => {
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  
+  const handleLogout = async () => {
     try {
       await API.post("/logout");
       queryClient.invalidateQueries(["user"]);
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+      setIsSearchOpen(false);
+      setSearchQuery('');
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSearchInputChange = async (e) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+
+    // Fetch suggestions if query is at least 2 characters
+    if (value.trim().length >= 2) {
+      try {
+        // Fetch both reviews and users
+        const [reviewsResponse, usersResponse] = await Promise.all([
+          API.get(`/reviews/search`, {
+            params: { 
+              q: value,
+              limit: 3 
+            }
+          }).catch(() => ({ data: { reviews: [] } })),
+          API.get(`/user-profile/search`, {
+            params: { 
+              q: value,
+              limit: 2 
+            }
+          }).catch(() => ({ data: { users: [] } }))
+        ]);
+        
+        const reviews = reviewsResponse.data.reviews || [];
+        const users = usersResponse.data.users || [];
+        
+        // Combine suggestions
+        const reviewSuggestions = reviews.map(r => ({
+          text: r.product,
+          category: r.category?.name || r.exceptionalCategory || 'Uncategorized',
+          type: 'review'
+        }));
+
+        const userSuggestions = users.map(u => ({
+          text: u.name,
+          category: `@${u.username}`,
+          type: 'user',
+          userId: u.id
+        }));
+
+        const allSuggestions = [...userSuggestions, ...reviewSuggestions].slice(0, 5);
+
+        setSearchSuggestions(allSuggestions);
+        setShowSuggestions(allSuggestions.length > 0);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+      }
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion) => {
+    setShowSuggestions(false);
+    setSearchQuery('');
+    
+    // If it's a user suggestion, navigate directly to their profile
+    if (suggestion.type === 'user' && suggestion.userId) {
+      navigate(`/user-profile/${suggestion.userId}`);
+    } else {
+      // Otherwise navigate to search results
+      navigate(`/search?q=${encodeURIComponent(suggestion.text)}`);
     }
   };
 
@@ -98,15 +181,47 @@ export default function Navbar() {
               </nav>
 
               {/* Search bar - Desktop */}
-              <div className="hidden lg:block max-w-sm xl:max-w-md w-full">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <div className="hidden lg:block max-w-sm xl:max-w-md w-full relative">
+                <form onSubmit={handleSearch} className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
                   <input
                     type="text"
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    onFocus={() => searchSuggestions.length > 0 && setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                     placeholder="Search reviews, topics..."
                     className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all border border-transparent focus:border-purple-200"
                   />
-                </div>
+                </form>
+                
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                    {searchSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {suggestion.type === 'user' && (
+                            <User className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{suggestion.text}</div>
+                            <div className="text-xs text-gray-500">{suggestion.category}</div>
+                          </div>
+                        </div>
+                        {suggestion.type === 'user' ? (
+                          <User className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <Search className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -132,103 +247,10 @@ export default function Navbar() {
               </button>
               
               {/* Notifications */}
-              <button className="relative p-2.5 hover:bg-gray-100 rounded-xl transition-colors">
-                <Bell className="w-5 h-5 text-gray-600" />
-                <span className="absolute top-1 right-1 w-4 h-4 text-xs flex items-center justify-center bg-red-500 text-white rounded-full font-semibold">
-                  3
-                </span>
-              </button>              {/* User dropdown */}
-              {user && (
-                <div className="relative">
-                  <button
-                    onClick={toggleDropdown}
-                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-semibold hover:shadow-lg transition-all relative overflow-hidden"
-                    title={user.name || user.username || 'User'}
-                  >
-                    {/* Always show the fallback first */}
-                    <span className="w-full h-full flex items-center justify-center">
-                      {(user.name || user.username || 'U')[0].toUpperCase()}
-                    </span>
-                    
-                    {/* Profile picture overlay */}
-                    {user.profilePicture && (
-                      <img
-                        src={user.profilePicture}
-                        alt={user.name || user.username || 'User'}
-                        className="absolute inset-0 w-full h-full object-cover rounded-xl"
-                        onError={(e) => {
-                          console.log('Navbar: Profile picture failed to load:', user.profilePicture);
-                          e.target.style.display = 'none';
-                        }}
-                      />
-                    )}
-                  </button>
-
-                  {isDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                      <div className="px-4 py-4 border-b border-gray-100 bg-gradient-to-r from-purple-50 to-blue-50">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-lg shadow-md relative overflow-hidden">
-                            {/* Always show the fallback first */}
-                            <span className="w-full h-full flex items-center justify-center">
-                              {(user.name || user.username || 'U')[0].toUpperCase()}
-                            </span>
-                            
-                            {/* Profile picture overlay */}
-                            {user.profilePicture && (
-                              <img
-                                src={user.profilePicture}
-                                alt={user.name || user.username || 'User'}
-                                className="absolute inset-0 w-full h-full object-cover rounded-xl"
-                                onError={(e) => {
-                                  console.log('Navbar dropdown: Profile picture failed to load:', user.profilePicture);
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 truncate">{user.name || user.username || 'Anonymous User'}</div>
-                            <div className="text-xs text-gray-600 truncate">{user.email}</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="py-2 px-2">
-                        <Link
-                          to="/profile"
-                          className="flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 rounded-xl transition-all group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition-colors">
-                            <User className="w-4 h-4 text-purple-600" />
-                          </div>
-                          <span className="font-medium">My Profile</span>
-                        </Link>
-                        <button
-                          className="w-full flex items-center space-x-3 px-3 py-2.5 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl transition-all group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center group-hover:bg-blue-200 transition-colors relative">
-                            <Bell className="w-4 h-4 text-blue-600" />
-                            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">3</span>
-                          </div>
-                          <span className="font-medium">Notifications</span>
-                        </button>
-                        <div className="border-t border-gray-100 my-2"></div>
-                        <button
-                          onClick={handleLogout}
-                          className="w-full flex items-center space-x-3 px-3 py-2.5 text-red-600 hover:bg-gradient-to-r hover:from-red-50 hover:to-pink-50 rounded-xl transition-all group"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-red-100 flex items-center justify-center group-hover:bg-red-200 transition-colors">
-                            <svg className="w-4 h-4 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                          </div>
-                          <span className="font-medium">Sign Out</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {user && <NotificationDropdown />}
+              
+              {/* User Profile Dropdown */}
+              {user && <ProfileDropdown user={user} />}
             </div>
 
             {/* Mobile Search Icon */}
@@ -248,13 +270,45 @@ export default function Navbar() {
           {isSearchOpen && (
             <div className="md:hidden pb-4">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <input
-                  type="text"
-                  placeholder="Search reviews, topics..."
-                  className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-200"
-                  autoFocus
-                />
+                <form onSubmit={handleSearch} className="relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4 z-10" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={handleSearchInputChange}
+                    placeholder="Search reviews, topics..."
+                    className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-gray-50 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 border border-gray-200"
+                    autoFocus
+                  />
+                </form>
+                
+                {/* Mobile Search Suggestions */}
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute top-full mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-50">
+                    {searchSuggestions.map((suggestion, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion)}
+                        className="w-full px-4 py-3 text-left hover:bg-purple-50 transition-colors flex items-center justify-between"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {suggestion.type === 'user' && (
+                            <User className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                          )}
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{suggestion.text}</div>
+                            <div className="text-xs text-gray-500">{suggestion.category}</div>
+                          </div>
+                        </div>
+                        {suggestion.type === 'user' ? (
+                          <User className="w-4 h-4 text-gray-400" />
+                        ) : (
+                          <Search className="w-4 h-4 text-gray-400" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -446,19 +500,6 @@ export default function Navbar() {
                     <div className="text-xs text-gray-500">View and edit profile</div>
                   </div>
                 </Link>
-
-                <button
-                  className="w-full flex items-center space-x-4 px-4 py-4 rounded-2xl hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Bell className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <div className="font-semibold text-gray-900">Notifications</div>
-                    <div className="text-xs text-gray-500">3 unread messages</div>
-                  </div>
-                  <span className="w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">3</span>
-                </button>
 
                 <button
                   onClick={handleLogout}

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Search, Plus, Bell, MoreHorizontal, ThumbsUp, MessageCircle, Share, ChevronDown, ChevronUp, Bookmark, TrendingUp } from 'lucide-react';
 
 export default function CleverlyTrendingPage() {
@@ -34,14 +34,6 @@ export default function CleverlyTrendingPage() {
       image: "/api/placeholder/400/240",
       bgColor: "bg-orange-400"
     }
-  ];
-
-  const trendingTopics = [
-    { tag: "#iPhone15Pro", reviews: "12.5K reviews" },
-    { tag: "#NYCFood", reviews: "8.2K reviews" },
-    { tag: "#SkinCare", reviews: "15.3K reviews" },
-    { tag: "#AirPods", reviews: "6.8K reviews" },
-    { tag: "#Starbucks", reviews: "9.1K reviews" }
   ];
 
   return (
@@ -112,126 +104,6 @@ export default function CleverlyTrendingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-
-        {/* Trending Topics Section */}
-        <div className="mb-12">
-          <div className="flex items-center space-x-2 mb-6">
-            <TrendingUp className="w-6 h-6 text-blue-500" />
-            <h2 className="text-xl font-bold text-gray-900">Trending Topics</h2>
-          </div>
-
-          <div className="flex flex-wrap gap-4">
-            {trendingTopics.map((topic, index) => (
-              <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-sm transition-shadow">
-                <div className="text-blue-600 font-semibold text-lg mb-1">{topic.tag}</div>
-                <div className="text-sm text-gray-500">{topic.reviews}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Featured Review Post */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {/* Post Header */}
-          <div className="p-6 pb-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
-                <div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-semibold text-gray-900">Alex Chen</span>
-                    <span className="text-blue-500">✓</span>
-                    <span className="text-sm text-blue-600 font-medium">Verified</span>
-                    <span className="text-sm text-gray-600 font-medium">Tech Expert</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>@alexchen_tech</span>
-                    <span>•</span>
-                    <span>2 hours ago</span>
-                    <span>•</span>
-                    <span>📍 San Francisco, CA</span>
-                  </div>
-                </div>
-              </div>
-              <button className="p-2 hover:bg-gray-100 rounded-full">
-                <MoreHorizontal className="w-5 h-5 text-gray-400" />
-              </button>
-            </div>
-
-            {/* Product Info */}
-            <div className="flex items-center space-x-3 mt-4 mb-4">
-              <div className="w-12 h-12 bg-gray-900 rounded-lg flex items-center justify-center">
-                <span className="text-white text-xs font-bold">📱</span>
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-gray-900">iPhone 15 Pro</h3>
-                <p className="text-sm text-gray-600">Technology</p>
-              </div>
-              <div className="flex items-center space-x-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <span key={star} className="text-yellow-400 text-lg">★</span>
-                ))}
-                <span className="ml-2 font-semibold text-gray-900">5.0</span>
-              </div>
-            </div>
-
-            {/* Review Title and Content */}
-            <h2 className="text-xl font-semibold text-gray-900 mb-3">
-              Incredible camera upgrade, but battery life could be better
-            </h2>
-            <p className="text-gray-700 leading-relaxed">
-              After using the iPhone 15 Pro for 3 weeks, I'm impressed with the camera improvements. The 5x zoom is a game-changer for photography enthusiasts. However, I've noticed the battery drains faster than m... 
-              <button className="text-blue-600 font-medium hover:underline">Read more</button>
-            </p>
-          </div>
-
-          {/* Images */}
-          <div className="px-6 pb-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="bg-gray-900 rounded-lg aspect-video flex items-center justify-center">
-                <span className="text-gray-400 text-4xl font-light">15</span>
-              </div>
-              <div className="bg-gray-800 rounded-lg aspect-video flex items-center justify-center">
-                <div className="w-16 h-16 bg-gray-600 rounded-full flex items-center justify-center">
-                  <div className="w-8 h-8 bg-gray-500 rounded-full"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Post Actions */}
-          <div className="px-6 py-4 border-t border-gray-100">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-6">
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
-                  <div className="flex items-center space-x-1">
-                    <ChevronUp className="w-5 h-5" />
-                    <ChevronDown className="w-3 h-3" />
-                  </div>
-                  <span className="font-medium">144</span>
-                </button>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
-                  <ThumbsUp className="w-5 h-5" />
-                  <span className="font-medium">124</span>
-                </button>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
-                  <MessageCircle className="w-5 h-5" />
-                  <span className="font-medium">18</span>
-                </button>
-                <button className="flex items-center space-x-2 text-gray-600 hover:text-blue-600">
-                  <Share className="w-5 h-5" />
-                  <span className="font-medium">7</span>
-                </button>
-              </div>
-              <button className="p-2 hover:bg-gray-100 rounded-full">
-                <Bookmark className="w-5 h-5 text-blue-600 fill-blue-600" />
-              </button>
-            </div>
-            <button className="text-gray-600 hover:text-gray-900 text-sm font-medium mt-3">
-              View all 18 comments
-            </button>
           </div>
         </div>
       </main>

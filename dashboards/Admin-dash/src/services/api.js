@@ -103,47 +103,47 @@ const reviewApiCall = async (endpoint, options = {}) => {
 // Domain Management API calls
 export const domainAPI = {
   // Categories
-  getCategories: () => domainApiCall('/categories'),
-  getCategoryById: (id) => domainApiCall(`/categories/${id}`),
+  getCategories: () => domainApiCall('/domain/categories'),
+  getCategoryById: (id) => domainApiCall(`/domain/categories/${id}`),
   
   createCategory: (categoryData) =>
-    domainApiCall('/categories', {
+    domainApiCall('/domain/categories', {
       method: 'POST',
       body: JSON.stringify(categoryData),
     }),
 
   updateCategory: (id, categoryData) =>
-    domainApiCall(`/categories/${id}`, {
+    domainApiCall(`/domain/categories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(categoryData),
     }),
 
   deleteCategory: (id) =>
-    domainApiCall(`/categories/${id}`, {
+    domainApiCall(`/domain/categories/${id}`, {
       method: 'DELETE',
     }),
 
   // Subcategories
-  getSubCategories: () => domainApiCall('/subcategories'),
-  getSubCategoryById: (id) => domainApiCall(`/subcategories/${id}`),
+  getSubCategories: () => domainApiCall('/domain/subcategories'),
+  getSubCategoryById: (id) => domainApiCall(`/domain/subcategories/${id}`),
 
   getSubCategoriesByCategory: (categoryId) =>
-    domainApiCall(`/categories/${categoryId}/subcategories`),
+    domainApiCall(`/domain/categories/${categoryId}/subcategories`),
 
   createSubCategory: (subCategoryData) =>
-    domainApiCall('/subcategories', {
+    domainApiCall('/domain/subcategories', {
       method: 'POST',
       body: JSON.stringify(subCategoryData),
     }),
 
   updateSubCategory: (id, subCategoryData) =>
-    domainApiCall(`/subcategories/${id}`, {
+    domainApiCall(`/domain/subcategories/${id}`, {
       method: 'PUT',
       body: JSON.stringify(subCategoryData),
     }),
 
   deleteSubCategory: (id) =>
-    domainApiCall(`/subcategories/${id}`, {
+    domainApiCall(`/domain/subcategories/${id}`, {
       method: 'DELETE',
     }),
 };
@@ -205,6 +205,24 @@ export const reviewsAPI = {
     reviewApiCall(`/reviews/exceptional/${reviewId}/create-subcategory`, {
       method: 'POST',
       body: JSON.stringify({ subcategoryName, categoryId }),
+    }),
+  
+  // Review verification endpoints
+  getByPostState: (postState) => reviewApiCall(`/reviews?postState=${postState}`),
+  approveReview: (reviewId, adminId, adminNotes = '') =>
+    reviewApiCall(`/reviews/admin/reviews/${reviewId}/approve`, {
+      method: 'PUT',
+      body: JSON.stringify({ adminId, adminNotes }),
+    }),
+  rejectReview: (reviewId, adminId, adminNotes = '') =>
+    reviewApiCall(`/reviews/admin/reviews/${reviewId}/reject`, {
+      method: 'PUT',
+      body: JSON.stringify({ adminId, adminNotes }),
+    }),
+  flagReview: (reviewId, adminId, adminNotes = '') =>
+    reviewApiCall(`/reviews/admin/reviews/${reviewId}/flag`, {
+      method: 'PUT',
+      body: JSON.stringify({ adminId, adminNotes }),
     }),
 };
 

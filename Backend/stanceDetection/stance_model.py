@@ -18,7 +18,7 @@ class StanceDetectionModel:
         genai.configure(api_key=GEMINI_API_KEY)
         self.model = genai.GenerativeModel('gemini-2.5-flash')
         
-        # Define the prompt template for stance detection
+        # Define the prompt template for stance detection (comments)
         self.prompt_template = """
 Analyze the stance of the given comment/reply towards the original review. 
 Determine whether the comment/reply AGREES, DISAGREES, or is NEUTRAL towards the review.
@@ -31,6 +31,28 @@ Guidelines:
 - AGREE: The comment supports, endorses, or expresses similar opinions to the review
 - DISAGREE: The comment contradicts, criticizes, or expresses opposing views to the review  
 - NEUTRAL: The comment is informational, asks questions, or doesn't take a clear stance
+
+Respond with ONLY a JSON object in this exact format:
+{{"stance": "AGREE|DISAGREE|NEUTRAL", "confidence": 0.85, "reasoning": "Brief explanation"}}
+"""
+        
+        # Define the prompt template for replies (considering parent comment)
+        self.reply_prompt_template = """
+Analyze the stance of the given reply towards the original review. 
+The reply is responding to a comment, but we need to determine its stance towards the original review.
+
+Original Review: "{review_text}"
+
+Parent Comment: "{parent_comment_text}"
+
+Reply: "{reply_text}"
+
+Guidelines:
+- AGREE: The reply ultimately supports or endorses the review's opinion (even if agreeing with a disagreeing comment, consider the final stance towards the review)
+- DISAGREE: The reply ultimately contradicts or opposes the review's opinion
+- NEUTRAL: The reply is informational, asks questions, or doesn't take a clear stance towards the review
+
+Context: Consider both the parent comment's stance and the reply's relationship to it when determining the final stance towards the review.
 
 Respond with ONLY a JSON object in this exact format:
 {{"stance": "AGREE|DISAGREE|NEUTRAL", "confidence": 0.85, "reasoning": "Brief explanation"}}

@@ -1,70 +1,99 @@
-import React from "react";
-import { FaStar, FaChartLine } from "react-icons/fa";
-
-const trendingReviews = [
-  {
-    id: 1,
-    product: "iPhone 15 Pro Max",
-    rating: 4.8,
-    reviewCount: 1245,
-    image: "/src/assets/posts/phone1.jpg",
-  },
-  {
-    id: 2,
-    product: "MacBook Pro M3",
-    rating: 4.9,
-    reviewCount: 892,
-    image: "/src/assets/posts/MacBook.webp",
-  },
-  {
-    id: 3,
-    product: "Samsung Galaxy S24",
-    rating: 4.7,
-    reviewCount: 654,
-    image: "/src/assets/posts/phone2.png",
-  },
-  {
-    id: 4,
-    product: "Dell XPS 13",
-    rating: 4.6,
-    reviewCount: 432,
-    image: "/src/assets/posts/laptop.jpg",
-  },
-];
+import React, { useState, useEffect } from "react";
+import { Users } from "lucide-react";
+import discoverService from "../services/discover.service";
 
 export default function TrendingSection() {
+  const [topReviewers, setTopReviewers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchTopReviewers();
+  }, []);
+
+  const fetchTopReviewers = async () => {
+    try {
+      setLoading(true);
+      const reviewersData = await discoverService.getTopReviewers(4);
+      setTopReviewers(reviewersData);
+    } catch (error) {
+      console.error('Error fetching top reviewers:', error);
+      setError('Failed to load top reviewers');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCount = (count) => {
+    if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`;
+    }
+    return count.toString();
+  };
+
+  const getAvatarColor = (index) => {
+    const colors = ['bg-orange-400', 'bg-blue-400', 'bg-green-400', 'bg-purple-400'];
+    return colors[index % colors.length];
+  };
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+        <div className="flex justify-center items-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
+        <div className="text-center text-red-500 text-sm py-4">{error}</div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 sticky top-24">
       <div className="flex items-center gap-2 mb-4">
-        <FaChartLine className="text-orange-500 w-5 h-5" />
-        <h3 className="text-lg font-semibold text-gray-900">Trending Reviews</h3>
+        <Users className="text-blue-500 w-5 h-5" />
+        <h3 className="text-lg font-semibold text-gray-900">Top Reviewers</h3>
       </div>
       
       <div className="space-y-4">
-        {trendingReviews.map((review) => (
-          <div key={review.id} className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
-            <img
-              src={review.image}
-              alt={review.product}
-              className="w-12 h-12 object-cover rounded-lg"
-            />
-            <div className="flex-1 min-w-0">
-              <h4 className="font-medium text-gray-900 text-sm truncate">
-                {review.product}
-              </h4>
-              <div className="flex items-center gap-1 mt-1">
-                <FaStar className="w-3 h-3 text-yellow-400" />
-                <span className="text-xs text-gray-600">{review.rating}</span>
-                <span className="text-xs text-gray-400">({review.reviewCount})</span>
+        {topReviewers.length > 0 ? (
+          topReviewers.map((reviewer, index) => (
+            <div key={reviewer.id} className="flex items-center gap-3 hover:bg-gray-50 p-2 rounded-lg cursor-pointer transition-colors">
+              {reviewer.profilePicture || reviewer.avatar ? (
+                <img
+                  src={reviewer.profilePicture || reviewer.avatar}
+                  alt={reviewer.name}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className={`w-12 h-12 ${getAvatarColor(index)} rounded-full flex items-center justify-center`}>
+                  <span className="text-white font-bold text-lg">{reviewer.name[0]}</span>
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <h4 className="font-medium text-gray-900 text-sm truncate">
+                  {reviewer.name}
+                </h4>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-green-600 font-semibold">{reviewer.trustScore}</span>
+                  <span className="text-xs text-gray-400">•</span>
+                  <span className="text-xs text-gray-600">{formatCount(reviewer.reviews)} reviews</span>
+                </div>
               </div>
             </div>
+          ))
+        ) : (
+          <div className="text-center text-gray-500 text-sm py-4">
+            No reviewers found
           </div>
-        ))}
+        )}
       </div>
-      
-      <button className="w-full mt-4 text-sky-600 hover:text-sky-700 text-sm font-medium py-2">
-        View all trending
-      </button>
     </div>
   );
 }

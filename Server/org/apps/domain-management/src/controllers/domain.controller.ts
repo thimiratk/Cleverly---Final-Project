@@ -17,7 +17,7 @@ export const getCategories = async (req: Request, res: Response) => {
         }
       }
     });
-    res.json(categories);
+    res.json({ categories });
   } catch (error) {
     console.error('Error fetching categories:', error);
     res.status(500).json({ error: 'Internal server error' });
@@ -350,5 +350,54 @@ export const deleteSubCategory = async (req: Request, res: Response) => {
     }
     console.error('Error deleting subcategory:', error);
     res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// Get categories with review counts for discover page
+export const getCategoriesForDiscover = async (req: Request, res: Response) => {
+  try {
+    // Get all categories with review counts
+    const categories = await prisma.categories.findMany({
+      include: {
+        _count: {
+          select: {
+            reviews: {
+              where: {
+                postState: { not: 'REJECTED' }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Get total review count
+    const totalReviews = await prisma.reviews.count({
+      where: {
+        postState: { not: 'REJECTED' }
+      }
+    });
+
+    // Format the response
+    const formattedCategories = [
+      {
+        id: 'all',
+        name: 'All Categories',
+        count: totalReviews,
+        reviews: 'reviews'
+      },
+      ...categories.map((category: any) => ({
+        id: category.id,
+        name: category.name,
+        count: category._count.reviews,
+        reviews: 'reviews'
+      }))
+    ];
+
+    console.log(`Found ${formattedCategories.length} categories for discover page`);
+    return res.json(formattedCategories);
+  } catch (error) {
+    console.error('Error fetching categories for discover:', error);
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 };

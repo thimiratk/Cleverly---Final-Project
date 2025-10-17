@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Home, Users, FileText, BarChart3, Menu, X, Shield, Award, Star, TrendingUp, AlertTriangle, CheckCircle, Globe, Tags, LogOut } from 'lucide-react';
+import { Home, Users, FileText, Menu, X, Award, CheckCircle, Globe, Tags, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection }) => {
@@ -15,11 +15,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen, activeSection, setActiveSection 
   const menuItems = [
     { id: 'dashboard', label: 'Platform Overview', icon: Home, path: '/' },
     { id: 'review-verification', label: 'Review Verification', icon: CheckCircle, path: '/review-verification' },
-    { id: 'users', label: 'User & Badge System', icon: Award, path: '/users' },
-    { id: 'fraud', label: 'Fraud Detection', icon: Shield, path: '/fraud' },
-    { id: 'moderator', label: 'Moderator Hub', icon: Users, path: '/moderator' },
-    { id: 'report', label: 'Report Management', icon: FileText, path: '/report' },
-    { id: 'analytics', label: 'Trust Analytics', icon: BarChart3, path: '/analytics' },
+    { id: 'badge-management', label: 'Badge Management', icon: Award, path: '/badge-management' },
+    // { id: 'moderator', label: 'Moderator Hub', icon: Users, path: '/moderator' },
+    // { id: 'report', label: 'Report Management', icon: FileText, path: '/report' },
     { id: 'domain-management', label: 'Domain Management', icon: Globe, path: '/domain-management' },
     { id: 'exceptional-reviews', label: 'Exceptional Categories', icon: Tags, path: '/exceptional-reviews' }
   ];

@@ -21,12 +21,12 @@ const ExceptionalReviews = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [reviewsData, categoriesData] = await Promise.all([
+      const [reviewsData, categoriesResponse] = await Promise.all([
         reviewsAPI.getExceptional(),
         domainAPI.getCategories()
       ]);
       setExceptionalReviews(reviewsData);
-      setCategories(categoriesData);
+      setCategories(categoriesResponse.categories || []);
     } catch (error) {
       console.error('Error loading data:', error);
       setError('Failed to load exceptional reviews');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Camera, User, Mail, Lock, Briefcase, MapPin, Image } from 'lucide-react';
+import { X, Camera, User, Image } from 'lucide-react';
 import { 
   Button, 
   Avatar, 
@@ -10,13 +10,9 @@ import {
 import { userProfileService } from '../services/userProfile.service';
 
 const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
-  const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [imageUploading, setImageUploading] = useState(false);
   const [profileData, setProfileData] = useState({
-    firstName: user?.firstName || '',
-    lastName: user?.lastName || '',
-    username: user?.username || '',
     bio: user?.bio || '',
     profileImage: user?.profilePicture || null,
     coverImage: user?.coverPicture || null
@@ -26,9 +22,6 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
   useEffect(() => {
     if (user) {
       setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        username: user.username || '',
         bio: user.bio || '',
         profileImage: user.profilePicture || null,
         coverImage: user.coverPicture || null
@@ -36,19 +29,8 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
     }
   }, [user]);
 
-  const [accountData, setAccountData] = useState({
-    email: user?.email || '',
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
   const handleProfileChange = (field, value) => {
     setProfileData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleAccountChange = (field, value) => {
-    setAccountData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleImageUpload = async (e, imageType = 'profile') => {
@@ -118,57 +100,44 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
   };
 
   const handleSave = async () => {
-    if (activeTab === 'account' && accountData.newPassword && accountData.newPassword !== accountData.confirmPassword) {
-      alert('Passwords do not match');
-      return;
-    }
-
     try {
       setLoading(true);
       
-      if (activeTab === 'profile') {
-        console.log('Saving profile data:', profileData);
+      console.log('Saving profile data:', profileData);
+      
+      // Only send bio for profile update
+      // Images are already uploaded via separate endpoints
+      const profileUpdateData = {
+        bio: profileData.bio
+      };
+      
+      // Check if there are any changes to save
+      const hasChanges = profileUpdateData.bio !== user?.bio;
+      
+      if (hasChanges) {
+        const response = await userProfileService.updateProfile(profileUpdateData);
         
-        // Only send text data for profile update, not image URLs
-        // Images are already uploaded via separate endpoints
-        const profileUpdateData = {
-          firstName: profileData.firstName,
-          lastName: profileData.lastName,
-          username: profileData.username,
-          bio: profileData.bio
-          // Don't include profilePicture and coverPicture as they're handled separately
-        };
+        console.log('Profile update response:', response);
         
-        // Check if there are any changes to save
-        const hasChanges = profileUpdateData.firstName !== user?.firstName ||
-                          profileUpdateData.lastName !== user?.lastName ||
-                          profileUpdateData.username !== user?.username ||
-                          profileUpdateData.bio !== user?.bio;
+        // Extract the profile from the response (it might be nested)
+        const updatedProfile = response.profile || response;
         
-        if (hasChanges) {
-          const response = await userProfileService.updateProfile(profileUpdateData);
-          
-          console.log('Profile update response:', response);
-          
-          // Extract the profile from the response (it might be nested)
-          const updatedProfile = response.profile || response;
-          
-          console.log('Updated profile being passed to parent:', updatedProfile);
-          
-          // Call the parent's save handler
-          onSave({
-            profile: updatedProfile,
-            account: accountData
-          });
-          
-          // Show success message
-          
-        } else {
-          // No text changes to save, just close the modal
-          console.log('No profile text changes to save');
-          
-        }
+        console.log('Updated profile being passed to parent:', updatedProfile);
+        
+        // Call the parent's save handler
+        onSave({
+          profile: updatedProfile
+        });
+        
+        alert('Profile updated successfully!');
+      } else {
+        // No changes to save, just close the modal
+        console.log('No profile changes to save');
       }
+      
+      // Close modal after save
+      setLoading(false);
+      onClose();
     } catch (error) {
       console.error('Error saving profile:', error);
       console.error('Error details:', error.response?.data || error.message);
@@ -179,12 +148,7 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
       
       // Don't close modal on error, let user try again
       setLoading(false);
-      return;
     }
-    
-    // Only close modal if everything succeeded
-    setLoading(false);
-    onClose();
   };
 
   if (!isOpen) return null;
@@ -209,34 +173,18 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
           {/* Tab Navigation */}
           <div className="flex space-x-4 mt-1">
             <Button
-              onClick={() => setActiveTab('profile')}
-              variant={activeTab === 'profile' ? 'secondary' : 'ghost'}
+              variant='secondary'
               size="sm"
-              className={activeTab === 'profile' 
-                ? 'bg-white text-blue-600' 
-                : 'text-blue-100 hover:text-black hover:bg-white hover:bg-opacity-20'
-              }
+              className='bg-white text-blue-600'
             >
               Profile Details
-            </Button>
-            <Button
-              onClick={() => setActiveTab('account')}
-              variant={activeTab === 'account' ? 'secondary' : 'ghost'}
-              size="sm"
-              className={activeTab === 'account' 
-                ? 'bg-white text-blue-600' 
-                : 'text-blue-100 hover:text-black hover:bg-white hover:bg-opacity-20'
-              }
-            >
-              Account Settings
             </Button>
           </div>
         </div>
 
         {/* Modal Content */}
         <div className="pt-2 pl-5 pr-5 overflow-y-auto max-h-[60vh]">
-          {activeTab === 'profile' && (
-            <div className="space-y-4">
+          <div className="space-y-4">
               {/* Cover Image */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-3">Cover Image</label>
@@ -308,43 +256,8 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
                 <p className="text-sm text-gray-500 mt-2">Profile Picture</p>
               </div>
 
-              {/* Profile Fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                  <input
-                    type="text"
-                    value={profileData.firstName}
-                    onChange={(e) => handleProfileChange('firstName', e.target.value)}
-                    className="w-full h-7 px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your first name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                  <input
-                    type="text"
-                    value={profileData.lastName}
-                    onChange={(e) => handleProfileChange('lastName', e.target.value)}
-                    className="w-full h-7 px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your last name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Username</label>
-                  <input
-                    type="text"
-                    value={profileData.username}
-                    onChange={(e) => handleProfileChange('username', e.target.value)}
-                    className="w-full h-7 px-3 py-1 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your username"
-                  />
-                </div>
-              </div>
-
-              <div className="col-span-1 md:col-span-2">
+              {/* Bio Field */}
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Bio</label>
                 <textarea
                   value={profileData.bio}
@@ -357,77 +270,6 @@ const ProfileEditModal = ({ isOpen, onClose, user, onSave, onImageUpdate }) => {
                 <p className="text-sm text-gray-500 mt-1">{profileData.bio.length}/200 characters</p>
               </div>
             </div>
-          )}
-
-          {activeTab === 'account' && (
-            <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-                <div className="relative">
-                  <Mail size={18} className={COMMON_STYLES.iconInInput} />
-                  <input
-                    type="email"
-                    value={accountData.email}
-                    onChange={(e) => handleAccountChange('email', e.target.value)}
-                    className="w-full pl-10 pr-3 py-1 h-8 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="your@email.com"
-                  />
-                </div>
-              </div>
-
-              <div className="border-t pt-1 pb-2">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Change Password</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
-                    <div className="relative">
-                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
-                      <input
-                        type="password"
-                        value={accountData.currentPassword}
-                        onChange={(e) => handleAccountChange('currentPassword', e.target.value)}
-                        className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter current password"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
-                    <div className="relative">
-                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
-                      <input
-                        type="password"
-                        value={accountData.newPassword}
-                        onChange={(e) => handleAccountChange('newPassword', e.target.value)}
-                        className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Enter new password"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
-                    <div className="relative">
-                      <Lock size={18} className={COMMON_STYLES.iconInInput} />
-                      <input
-                        type="password"
-                        value={accountData.confirmPassword}
-                        onChange={(e) => handleAccountChange('confirmPassword', e.target.value)}
-                        className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        placeholder="Confirm new password"
-                      />
-                    </div>
-                  </div>
-
-                  {accountData.newPassword && accountData.confirmPassword && accountData.newPassword !== accountData.confirmPassword && (
-                    <p className="text-red-500 text-sm">Passwords do not match</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Modal Footer */}

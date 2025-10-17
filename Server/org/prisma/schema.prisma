@@ -24,6 +24,14 @@ enum NotificationType {
   REVIEW_VOTE
   COMMENT
   COMMENT_LIKE
+  REVIEW_STATUS
+}
+
+enum PostState {
+  PENDING
+  VERIFIED
+  REJECTED
+  FLAGGED
 }
 
 model images {
@@ -59,6 +67,7 @@ model users {
   updatedAt DateTime @updatedAt
   reviews reviews[]
   badges userBadges[]
+  assignedBadges UserBadge[] // New badge system
   
   // User interaction relationships
   reviewVotes reviewVotes[]
@@ -70,6 +79,44 @@ model users {
 
 }
 
+// Badge template/definition model
+model Badge {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique
+  description String
+  imageUrl String? // Cloudinary URL (auto-compressed to 200x200, stored when badge is created)
+  category String // "all" or specific category
+  
+  // Criteria stored as JSON for flexibility
+  criteria Json // {followers: {enabled: true, operator: "more_than", value: 100}, reviews: {...}}
+  
+  isActive Boolean @default(true)
+  createdBy String? @db.ObjectId // Admin who created this badge
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  userBadges UserBadge[]
+}
+
+// User badge assignment model (many-to-many with metadata)
+model UserBadge {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId String @db.ObjectId
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  assignedBy String? @db.ObjectId // Admin who assigned this badge
+  assignedAt DateTime @default(now())
+  
+  // Metadata at time of assignment
+  criteriaMetAt Json? // Snapshot of user stats when badge was assigned
+  
+  @@unique([userId, badgeId])
+}
+
+// Legacy model - keeping for backward compatibility
 model userBadges {
   id String @id @default(auto()) @map("_id") @db.ObjectId
   name String
@@ -140,6 +187,12 @@ model reviews {
   sentimentResult Json?
   analysisErrors String[] @default([])
   analysisCompletedAt DateTime?
+  
+  // Admin verification status
+  postState PostState @default(PENDING)
+  reviewedBy String? // Admin who reviewed this (can be ObjectId or string identifier)
+  reviewedAt DateTime? // When the review was verified/rejected/flagged
+  adminNotes String? // Optional notes from admin
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

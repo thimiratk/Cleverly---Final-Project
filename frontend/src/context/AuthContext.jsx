@@ -21,7 +21,19 @@ export const AuthProvider = ({ children }) => {
           setUser(storedUser);
         }
 
-        const { user: fetchedUser, status } = await AuthService.fetchCurrentUser();
+        // Add timeout to prevent infinite loading
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Auth check timeout')), 5000)
+        );
+
+        const authCheck = AuthService.fetchCurrentUser();
+        
+        const { user: fetchedUser, status } = await Promise.race([authCheck, timeout])
+          .catch(error => {
+            console.warn('Auth check failed or timed out:', error.message);
+            return { user: null, status: null };
+          });
+
         if (fetchedUser && isMounted) {
           setUser(fetchedUser);
         } else if (!fetchedUser && storedUser && status === 401 && isMounted) {

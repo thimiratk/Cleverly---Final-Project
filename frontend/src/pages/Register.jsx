@@ -148,7 +148,32 @@ export default function Register() {
       }
     } catch (error) {
       console.error("Register error:", error);
-      toast.error(error.response?.data?.error || error.response?.data?.message || "Registration failed");
+      
+      // Extract error message as a string
+      let errorMessage = "Registration failed";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (typeof errorData === 'object') {
+          // Check for nested error object: {error: {message: "...", status: 400}}
+          if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+            errorMessage = errorData.error.message;
+          }
+          // Check for direct error string: {error: "Invalid password"}
+          else if (typeof errorData.error === 'string') {
+            errorMessage = errorData.error;
+          }
+          // Check for direct message: {message: "Invalid password"}
+          else if (typeof errorData.message === 'string') {
+            errorMessage = errorData.message;
+          }
+        }
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -165,7 +190,32 @@ export default function Register() {
     toast.success("OTP resent successfully!");}
     catch (error) {
       console.error("Resend OTP error:", error);
-      toast.error(error.response?.data?.error || error.response?.data?.message || "Failed to resend OTP");
+      
+      // Extract error message as a string
+      let errorMessage = "Failed to resend OTP";
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (typeof errorData === 'object') {
+          // Check for nested error object: {error: {message: "...", status: 400}}
+          if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+            errorMessage = errorData.error.message;
+          }
+          // Check for direct error string: {error: "Invalid password"}
+          else if (typeof errorData.error === 'string') {
+            errorMessage = errorData.error;
+          }
+          // Check for direct message: {message: "Invalid password"}
+          else if (typeof errorData.message === 'string') {
+            errorMessage = errorData.message;
+          }
+        }
+      } else if (typeof error.message === 'string') {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
     // call your API to resend OTP here
   };

@@ -83,7 +83,7 @@ app.use("/api/reviews", proxy("http://localhost:6002", {
 }));
 
 // Route auth requests to auth service (login, register, verify, etc.)
-app.use(["/api/login", "/api/register", "/api/verify", "/api/logout", "/api/refresh-token", "/api/auth"], proxy("http://localhost:6001", {
+app.use(["/api/login", "/api/register", "/api/verify", "/api/logout", "/api/refresh-token", "/api/auth", "/api/forgot-password", "/api/verify-forgot-password-otp", "/api/reset-password"], proxy("http://localhost:6001", {
   proxyReqPathResolver: (req) => {
     return req.originalUrl.replace('/api', '');
   },
@@ -126,9 +126,10 @@ app.use(["/auth/google", "/auth/google/callback", "/callback"], proxy("http://lo
 }));
 
 // Route domain management requests
-app.use(["/api/domains", "/api/categories", "/api/subcategories"], proxy("http://localhost:6003", {
+app.use("/api/domain", proxy("http://localhost:6003", {
   proxyReqPathResolver: (req) => {
-    return req.originalUrl.replace('/api', '');
+    // Don't remove /api - domain service expects /api/domain/*
+    return req.originalUrl;
   },
   proxyErrorHandler: (err, res, next) => {
     console.error('Domain management service proxy error:', err);
@@ -138,19 +139,32 @@ app.use(["/api/domains", "/api/categories", "/api/subcategories"], proxy("http:/
   }
 }));
 
-// Route user profile requests
-app.use("/api/profile", proxy("http://localhost:6004", {
+// Route user profile image uploads (multipart/form-data) - don't parse body
+app.use(["/api/profile/me/profile-picture", "/api/profile/me/cover-picture"], proxy("http://localhost:6004", {
   proxyReqPathResolver: (req) => {
     return req.originalUrl.replace('/api', '');
   },
   proxyReqOptDecorator: (proxyReqOpts, srcReq) => {
-    // For multipart uploads, preserve the content-type and don't parse the body
+    // For multipart uploads, preserve the content-type
     if (srcReq.headers['content-type'] && srcReq.headers['content-type'].includes('multipart/form-data')) {
       proxyReqOpts.headers['content-type'] = srcReq.headers['content-type'];
     }
     return proxyReqOpts;
   },
   parseReqBody: false, // Don't parse body for file uploads
+  proxyErrorHandler: (err, res, next) => {
+    console.error('User profile image upload proxy error:', err);
+    if (!res.headersSent) {
+      res.status(502).json({ error: 'Bad gateway', details: err.message });
+    }
+  }
+}));
+
+// Route other user profile requests (JSON data) - parse body normally
+app.use("/api/profile", proxy("http://localhost:6004", {
+  proxyReqPathResolver: (req) => {
+    return req.originalUrl.replace('/api', '');
+  },
   proxyErrorHandler: (err, res, next) => {
     console.error('User profile service proxy error:', err);
     if (!res.headersSent) {

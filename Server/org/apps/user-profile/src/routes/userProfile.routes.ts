@@ -8,8 +8,21 @@ import {
   getFollowStats,
   followUser,
   unfollowUser,
-  getUserBadges
+  getUserBadges,
+  getUserTrustScore,
+  updateTrustScore,
+  recalculateAllTrustScores,
+  getTopReviewers,
+  searchUsers
 } from '../controllers/userProfile.controller';
+import {
+  getNotifications,
+  getUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification,
+  deleteAllNotifications
+} from '../controllers/notification.controller';
 import { authenticateToken, optionalAuth } from '../middleware/auth.middleware';
 import { upload } from '../utils/fileUpload';
 
@@ -32,6 +45,20 @@ const handleMulterError = (err: any, req: any, res: any, next: any) => {
 
 // Get current user's profile (requires authentication)
 router.get('/me', authenticateToken, getCurrentUserProfile);
+
+// Notification routes (MUST be before /:userId routes)
+router.get('/notifications', authenticateToken, getNotifications);
+router.get('/notifications/unread-count', authenticateToken, getUnreadCount);
+router.put('/notifications/:notificationId/read', authenticateToken, markAsRead);
+router.put('/notifications/read-all', authenticateToken, markAllAsRead);
+router.delete('/notifications/:notificationId', authenticateToken, deleteNotification);
+router.delete('/notifications/delete-all', authenticateToken, deleteAllNotifications);
+
+// Get top reviewers for discover page (MUST be before /:userId routes)
+router.get('/top-reviewers', getTopReviewers);
+
+// Search users (MUST be before /:userId routes)
+router.get('/search', searchUsers);
 
 // Get any user's profile (optional authentication for follow status)
 router.get('/:userId', optionalAuth, getUserProfile);
@@ -66,6 +93,15 @@ router.delete('/:userId/follow', authenticateToken, unfollowUser);
 
 // Get user badges and trust score
 router.get('/:userId/badges', getUserBadges);
+
+// Get user trust score with breakdown
+router.get('/:userId/trust-score', getUserTrustScore);
+
+// Update user trust score (recalculate)
+router.put('/:userId/trust-score', authenticateToken, updateTrustScore);
+
+// Recalculate all user trust scores (admin only - requires authentication)
+router.post('/admin/trust-scores/recalculate', authenticateToken, recalculateAllTrustScores);
 
 // Health check
 router.get('/health', (req, res) => {

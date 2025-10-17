@@ -29,7 +29,7 @@ If you want to test immediately:
 
 1. **Get Admin Token**:
    ```bash
-   curl -X POST "https://animated-space-umbrella-g4x9q94q5gv53p47-8080.app.github.dev/api/login" \
+   curl -X POST "http://localhost:8080/api/login" \
      -H "Content-Type: application/json" \
      -d '{"email":"admin@cleverly.com","password":"admin123"}'
    ```

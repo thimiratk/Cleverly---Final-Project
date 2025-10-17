@@ -148,21 +148,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-600 text-sm font-medium">Conversion Rate</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">
-                  {adminStats?.overview?.conversionRate || 0}%
-                </p>
-                <p className="text-xs text-gray-500 mt-1">Standard categories</p>
-              </div>
-              <div className="w-12 h-12 bg-purple-50 rounded-lg flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

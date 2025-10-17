@@ -1,43 +1,74 @@
 ﻿﻿import React, { useState, useEffect } from "react";
-import StoriesSection from "../components/StoriesSection";
 import TrendingSection from "../components/TrendingSection";
 import ReviewCard from "../components/ReviewCard";
 import CategoriesSection from "../components/CategoriesSection";
 import CreateReview from "../components/CreateReview";
 import { Link } from "react-router-dom";
 import reviewService from "../services/review.service";
-import aron from '../assets/aron.png';
-import selena from '../assets/selena.jpg';
-import profile from '../assets/profile.png';
-import macbook from '../assets/posts/MacBook.webp';
-import phone1 from '../assets/posts/phone1.jpg';
-import laptop from '../assets/posts/laptop.jpg';
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [communityStats, setCommunityStats] = useState({
+    totalReviews: 0,
+    activeUsers: 0,
+    verifiedReviews: 0
+  });
 
-  // Fetch reviews when component mounts
+  // Fetch community stats
+  useEffect(() => {
+    fetchCommunityStats();
+  }, []);
+
+  // Fetch reviews when component mounts or category changes
   useEffect(() => {
     fetchReviews();
-  }, []);
+  }, [selectedCategory]);
+
+  const fetchCommunityStats = async () => {
+    try {
+      const stats = await reviewService.getCommunityStats();
+      setCommunityStats(stats);
+    } catch (error) {
+      console.error('Error fetching community stats:', error);
+    }
+  };
 
   const fetchReviews = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('Home: Fetching all reviews...');
-      const reviewsData = await reviewService.getAllReviews();
+      console.log('Home: Fetching reviews...', selectedCategory ? `for category: ${selectedCategory}` : 'all categories');
+      
+      // Add category filter if selected
+      const params = {};
+      if (selectedCategory) {
+        params.categoryId = selectedCategory;
+      }
+      
+      const reviewsData = await reviewService.getAllReviews(params);
       console.log('Home: Received reviews data:', reviewsData);
-      setReviews(reviewsData || []);
+      
+      // Filter out REJECTED reviews from public view
+      const filteredReviews = (reviewsData || []).filter(review => {
+        // Only show non-rejected reviews on home page
+        return review.postState !== 'REJECTED';
+      });
+      
+      setReviews(filteredReviews);
     } catch (err) {
       console.error('Home: Error fetching reviews:', err);
       setError('Failed to load reviews. Please try again later.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCategorySelect = (categoryId) => {
+    setSelectedCategory(categoryId);
   };
 
   const handleReviewCreated = () => {
@@ -72,24 +103,12 @@ export default function Home() {
 
   return (
     <div className="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 min-h-screen pb-4 pt-24">
-      {/* Welcome Header */}
-      <div className="max-w-4xl mx-auto pt-6 px-4">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-2">
-            Welcome to Cleverly
-          </h1>
-          <p className="text-gray-600 text-lg">Discover amazing reviews from our community</p>
-        </div>
-      </div>
-
-      {/* Stories Section */}
-      <div className="max-w-4xl mx-auto pt-4 px-4">
-        <StoriesSection />
-      </div>
-
       {/* Categories Section */}
       <div className="max-w-4xl mx-auto mt-6 px-4">
-        <CategoriesSection />
+        <CategoriesSection 
+          selectedCategory={selectedCategory}
+          onCategorySelect={handleCategorySelect}
+        />
       </div>
 
       {/* Main Feed Layout */}
@@ -101,15 +120,27 @@ export default function Home() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Total Reviews</span>
-                <span className="font-bold text-purple-600">12.5K+</span>
+                <span className="font-bold text-purple-600">
+                  {communityStats.totalReviews >= 1000 
+                    ? `${(communityStats.totalReviews / 1000).toFixed(1)}K+` 
+                    : `${communityStats.totalReviews}+`}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-600">Active Users</span>
-                <span className="font-bold text-blue-600">2.8K+</span>
+                <span className="font-bold text-blue-600">
+                  {communityStats.activeUsers >= 1000 
+                    ? `${(communityStats.activeUsers / 1000).toFixed(1)}K+` 
+                    : `${communityStats.activeUsers}+`}
+                </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">Products Reviewed</span>
-                <span className="font-bold text-green-600">4.2K+</span>
+                <span className="text-gray-600">Verified Reviews</span>
+                <span className="font-bold text-green-600">
+                  {communityStats.verifiedReviews >= 1000 
+                    ? `${(communityStats.verifiedReviews / 1000).toFixed(1)}K+` 
+                    : `${communityStats.verifiedReviews}+`}
+                </span>
               </div>
             </div>
             <div className="mt-6 p-4 bg-gradient-to-r from-purple-100 to-blue-100 rounded-xl">
@@ -135,6 +166,28 @@ export default function Home() {
               Write a Review
             </button>
           </div>
+
+          {/* Category Filter Indicator */}
+          {selectedCategory && !loading && (
+            <div className="bg-white rounded-xl shadow-sm p-4 mb-6 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-600">Filtered by:</span>
+                <span className="px-3 py-1 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-full text-sm font-medium">
+                  Category
+                </span>
+              </div>
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center"
+              >
+                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Clear Filter
+              </button>
+            </div>
+          )}
+
           {/* Feed of reviews */}
           <div className="space-y-6">
             {loading ? (
@@ -203,29 +256,6 @@ export default function Home() {
         {/* Trending sidebar (right) */}
         <div className="hidden lg:block w-80 flex-shrink-0">
           <TrendingSection />
-          
-          {/* Trending Reviewers */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mt-6 sticky top-96">
-            <h3 className="text-lg font-bold text-gray-900 mb-4">🌟 Top Reviewers</h3>
-            <div className="space-y-3">
-              {[
-                { name: "Alex Chen", reviews: 89, avatar: "/src/assets/aron.png" },
-                { name: "Sarah Johnson", reviews: 76, avatar: "/src/assets/selena.jpg" },
-                { name: "Mike Davis", reviews: 63, avatar: "/src/assets/profile.png" }
-              ].map((reviewer, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50">
-                  <img src={reviewer.avatar} alt={reviewer.name} className="w-10 h-10 rounded-full" />
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 text-sm">{reviewer.name}</p>
-                    <p className="text-xs text-gray-500">{reviewer.reviews} reviews</p>
-                  </div>
-                  <button className="text-xs bg-purple-100 text-purple-600 px-3 py-1 rounded-full font-medium hover:bg-purple-200">
-                    Follow
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </div>

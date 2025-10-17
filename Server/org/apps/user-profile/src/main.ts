@@ -9,6 +9,7 @@ import cors from 'cors';
 import * as path from 'path';
 import cookieParser from 'cookie-parser';
 import userProfileRoutes from './routes/userProfile.routes';
+import badgeRoutes from './routes/badge.routes';
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 // Routes
 app.use('/profile', userProfileRoutes);
+app.use('/admin', badgeRoutes);
 
 // Default route
 app.get('/', (req, res) => {

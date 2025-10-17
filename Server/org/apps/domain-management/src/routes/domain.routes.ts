@@ -11,9 +11,13 @@ import {
   createSubCategory,
   updateSubCategory,
   deleteSubCategory,
+  getCategoriesForDiscover
 } from '../controllers/domain.controller';
 
 const router = express.Router();
+
+// Categories for discover page (MUST be before /categories/:id)
+router.get('/categories/discover', getCategoriesForDiscover);
 
 // Categories
 router.route('/categories')

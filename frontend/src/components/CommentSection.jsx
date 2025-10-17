@@ -9,6 +9,7 @@ import {
   likeComment,
   unlikeComment
 } from '../services/api';
+import { detectCommentStance, detectReplyStance } from '../services/geminiService';
 
 const formatRelativeTime = (timeString) => {
   try {
@@ -358,7 +359,7 @@ const CommentItem = ({
   );
 };
 
-function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
+function CommentSection({ reviewId, reviewText, reviewAuthorId, isVisible, onCommentCountChange, onStanceCountsChange }) {
   const { user: currentUser } = useAuth();
   const [comments, setComments] = useState([]);
   const [totalCount, setTotalCount] = useState(0);
@@ -366,6 +367,40 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState('newest');
+  const [detectingStance, setDetectingStance] = useState(false);
+
+  // Helper function to calculate stance counts from all comments and replies
+  const calculateStanceCounts = useCallback((commentsList) => {
+    let agreeCount = 0;
+    let disagreeCount = 0;
+    let neutralStanceCount = 0;
+
+    const countStances = (comments) => {
+      comments.forEach(comment => {
+        const stance = comment.stance?.toUpperCase();
+        if (stance === 'AGREE') agreeCount++;
+        else if (stance === 'DISAGREE') disagreeCount++;
+        else if (stance === 'NEUTRAL') neutralStanceCount++;
+
+        // Recursively count replies
+        if (comment.replies && comment.replies.length > 0) {
+          countStances(comment.replies);
+        }
+      });
+    };
+
+    countStances(commentsList);
+    return { agreeCount, disagreeCount, neutralStanceCount };
+  }, []);
+
+  // Notify parent component when stance counts change
+  const notifyStanceCountsChange = useCallback((commentsList) => {
+    if (onStanceCountsChange) {
+      const counts = calculateStanceCounts(commentsList);
+      console.log('[CommentSection] Calculated stance counts:', counts);
+      onStanceCountsChange(counts);
+    }
+  }, [onStanceCountsChange, calculateStanceCounts]);
 
   useEffect(() => {
     if (!isVisible || !reviewId) {
@@ -395,6 +430,8 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
         if (onCommentCountChange) {
           onCommentCountChange(nextCount);
         }
+        // Update stance counts in real-time
+        notifyStanceCountsChange(normalized);
       } catch (error) {
         if (!isCancelled) {
           console.error('Error loading comments:', error);
@@ -413,7 +450,7 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
       isCancelled = true;
       clearTimeout(timeoutId);
     };
-  }, [isVisible, reviewId, sortBy, onCommentCountChange, currentUser?.id]);
+  }, [isVisible, reviewId, sortBy, onCommentCountChange, currentUser?.id, notifyStanceCountsChange]);
 
   const handleAddComment = useCallback(async (event) => {
     event.preventDefault();
@@ -422,13 +459,50 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
       return;
     }
 
-    if (!newComment.trim() || submitting) {
+    if (!newComment.trim() || submitting || detectingStance) {
       return;
     }
 
     setSubmitting(true);
+    setDetectingStance(true);
+    
     try {
-      const response = await addComment(reviewId, currentUser.id, newComment.trim());
+      // Step 1: Detect stance using Gemini API
+      let stanceData = null;
+      
+      // Debug: Always log reviewText state
+      console.log('[Stance Detection] ReviewText prop value:', reviewText);
+      console.log('[Stance Detection] ReviewText type:', typeof reviewText);
+      console.log('[Stance Detection] ReviewText length:', reviewText?.length);
+      console.log('[Stance Detection] ReviewText is truthy:', !!reviewText);
+      
+      if (reviewText && reviewText.trim().length > 0) {
+        console.log('[Stance Detection] Starting stance detection...');
+        console.log('[Stance Detection] Review author ID:', reviewAuthorId);
+        console.log('[Stance Detection] Comment author ID:', currentUser?.id);
+        console.log('[Stance Detection] Review text:', reviewText.substring(0, 100) + '...');
+        console.log('[Stance Detection] Comment text:', newComment.trim());
+        
+        try {
+          stanceData = await detectCommentStance(reviewText, newComment.trim(), reviewAuthorId, currentUser?.id);
+          console.log('[Stance Detection] Result:', stanceData);
+          console.log('[Stance Detection] Stance will be sent to backend:', stanceData ? 'YES' : 'NO');
+        } catch (stanceError) {
+          console.error('[Stance Detection] Error during detection:', stanceError);
+          console.error('[Stance Detection] Will submit comment without stance data');
+        }
+      } else {
+        console.warn('[Stance Detection] ⚠️ SKIPPING - No review text available!');
+        console.warn('[Stance Detection] ReviewText value:', reviewText);
+        console.warn('[Stance Detection] This comment will be saved WITHOUT stance data');
+      }
+      
+      setDetectingStance(false);
+      
+      // Step 2: Submit comment with stance data
+      console.log('[Comment Submission] Submitting comment with stance data:', stanceData);
+      const response = await addComment(reviewId, currentUser.id, newComment.trim(), null, stanceData);
+      console.log('[Comment Submission] Response:', response);
       const added = response?.comment;
       if (added) {
         const hydrated = {
@@ -436,7 +510,12 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
           __likedByMe: false,
           replies: added.replies || []
         };
-        setComments((prev) => [hydrated, ...prev]);
+        setComments((prev) => {
+          const updated = [hydrated, ...prev];
+          // Update stance counts in real-time
+          notifyStanceCountsChange(updated);
+          return updated;
+        });
       }
 
       setNewComment('');
@@ -455,9 +534,10 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
         alert('Failed to add comment. Please try again.');
       }
     } finally {
+      setDetectingStance(false);
       setTimeout(() => setSubmitting(false), 1000);
     }
-  }, [currentUser, newComment, onCommentCountChange, reviewId, submitting]);
+  }, [currentUser, newComment, onCommentCountChange, reviewId, reviewText, submitting, detectingStance, reviewAuthorId, notifyStanceCountsChange]);
 
   const handleEditComment = useCallback(async (commentId, content) => {
     if (!currentUser) {
@@ -471,21 +551,86 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
     }
 
     setSubmitting(true);
+    setDetectingStance(true);
+    
     try {
-      await updateComment(commentId, trimmed, currentUser.id);
+      // Step 1: Re-analyze stance for edited comment
+      let stanceData = null;
+      
+      // Find the comment being edited to check if it's a reply
+      const findComment = (nodes, targetId) => {
+        for (const node of nodes) {
+          if (node.id === targetId) return node;
+          if (node.replies && node.replies.length > 0) {
+            const found = findComment(node.replies, targetId);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const existingComment = findComment(comments, commentId);
+      
+      if (reviewText && reviewText.trim().length > 0) {
+        console.log('[Edit Comment] Re-analyzing stance...');
+        console.log('[Edit Comment] Review author ID:', reviewAuthorId);
+        console.log('[Edit Comment] Comment author ID:', currentUser?.id);
+        console.log('[Edit Comment] Comment text:', trimmed);
+        
+        try {
+          // Check if it's a reply or a top-level comment
+          if (existingComment?.parentCommentId) {
+            // It's a reply - find parent comment
+            const parentComment = findComment(comments, existingComment.parentCommentId);
+            if (parentComment) {
+              stanceData = await detectReplyStance(reviewText, parentComment.content, trimmed, reviewAuthorId, currentUser?.id);
+              console.log('[Edit Reply] Stance detected:', stanceData);
+            }
+          } else {
+            // It's a top-level comment
+            stanceData = await detectCommentStance(reviewText, trimmed, reviewAuthorId, currentUser?.id);
+            console.log('[Edit Comment] Stance detected:', stanceData);
+          }
+        } catch (stanceError) {
+          console.error('[Edit Comment] Error during stance detection:', stanceError);
+          console.error('[Edit Comment] Will update comment without new stance data');
+        }
+      }
+      
+      setDetectingStance(false);
+      
+      // Step 2: Update comment with new stance data
+      await updateComment(commentId, trimmed, currentUser.id, stanceData);
+      
+      // Step 3: Update local state
       setComments((prev) => {
-        const { changed, nodes } = updateNodeInTree(prev, commentId, (node) => ({ ...node, content: trimmed }));
+        const { changed, nodes } = updateNodeInTree(prev, commentId, (node) => ({
+          ...node,
+          content: trimmed,
+          ...(stanceData && {
+            stance: stanceData.stance,
+            stanceConfidence: stanceData.confidence,
+            stanceReasoning: stanceData.reasoning,
+            stanceAnalyzedAt: new Date().toISOString()
+          })
+        }));
+        // Update stance counts in real-time after edit
+        if (changed) {
+          notifyStanceCountsChange(nodes);
+        }
         return changed ? nodes : prev;
       });
+      
       return true;
     } catch (error) {
       console.error('Error updating comment:', error);
       alert('Failed to update comment. Please try again.');
       return false;
     } finally {
+      setDetectingStance(false);
       setSubmitting(false);
     }
-  }, [currentUser]);
+  }, [currentUser, comments, reviewText, reviewAuthorId, notifyStanceCountsChange]);
 
   const handleDeleteComment = useCallback(async (commentId) => {
     if (!currentUser) {
@@ -503,6 +648,10 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
       setComments((prev) => {
         const { changed, nodes } = removeNodeFromTree(prev, commentId);
         removed = changed;
+        // Update stance counts in real-time after delete
+        if (changed) {
+          notifyStanceCountsChange(nodes);
+        }
         return changed ? nodes : prev;
       });
 
@@ -521,7 +670,7 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
       alert('Failed to delete comment. Please try again.');
       return false;
     }
-  }, [currentUser, onCommentCountChange]);
+  }, [currentUser, onCommentCountChange, notifyStanceCountsChange]);
 
   const handleReply = useCallback(async (parentCommentId, content) => {
     if (!currentUser) {
@@ -535,8 +684,37 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
     }
 
     setSubmitting(true);
+    setDetectingStance(true);
+    
     try {
-      const response = await addComment(reviewId, currentUser.id, trimmed, parentCommentId);
+      // Step 1: Find parent comment to get its content
+      const findComment = (nodes, targetId) => {
+        for (const node of nodes) {
+          if (node.id === targetId) return node;
+          if (node.replies && node.replies.length > 0) {
+            const found = findComment(node.replies, targetId);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      
+      const parentComment = findComment(comments, parentCommentId);
+      
+      // Step 2: Detect stance using Gemini API
+      let stanceData = null;
+      if (reviewText && parentComment) {
+        console.log('Detecting stance for reply...');
+        console.log('[Stance Detection] Review author ID:', reviewAuthorId);
+        console.log('[Stance Detection] Reply author ID:', currentUser?.id);
+        stanceData = await detectReplyStance(reviewText, parentComment.content, trimmed, reviewAuthorId, currentUser?.id);
+        console.log('Reply stance detected:', stanceData);
+      }
+      
+      setDetectingStance(false);
+      
+      // Step 3: Submit reply with stance data
+      const response = await addComment(reviewId, currentUser.id, trimmed, parentCommentId, stanceData);
       const reply = response?.comment;
       if (reply) {
         const hydratedReply = {
@@ -546,6 +724,10 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
         };
         setComments((prev) => {
           const { changed, nodes } = appendReplyToTree(prev, parentCommentId, hydratedReply);
+          // Update stance counts in real-time after adding reply
+          if (changed) {
+            notifyStanceCountsChange(nodes);
+          }
           return changed ? nodes : prev;
         });
       }
@@ -563,9 +745,10 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
       alert('Failed to add reply. Please try again.');
       return false;
     } finally {
+      setDetectingStance(false);
       setSubmitting(false);
     }
-  }, [currentUser, onCommentCountChange, reviewId]);
+  }, [currentUser, comments, onCommentCountChange, reviewId, reviewText, reviewAuthorId, notifyStanceCountsChange]);
 
   const toggleCommentLike = useCallback(async (commentId) => {
     if (!currentUser) {
@@ -646,10 +829,10 @@ function CommentSection({ reviewId, isVisible, onCommentCountChange }) {
               <div className="flex justify-end mt-2">
                 <button
                   type="submit"
-                  disabled={submitting || !newComment.trim()}
+                  disabled={submitting || detectingStance || !newComment.trim()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-semibold"
                 >
-                  {submitting ? 'Posting...' : 'Post Comment'}
+                  {detectingStance ? 'Analyzing...' : submitting ? 'Posting...' : 'Post Comment'}
                 </button>
               </div>
             </div>

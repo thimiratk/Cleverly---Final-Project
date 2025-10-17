@@ -7,13 +7,10 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './pages/Dashboard';
 import ModeratorManagement from './pages/Moderator_Management';
 import ReportManagement from './pages/Report_management';
-import Analytics from './pages/Analytics';
 import AdminProfile from './pages/AdminProfile';
 import AdminSettings from './pages/AdminSettings';
 import ReviewVerification from './pages/ReviewVerification';
 import BadgeManagement from './pages/BadgeManagement';
-import TrustAndSafety from './pages/TrustAndSafety';
-import FraudDetection from './pages/FraudDetection';
 import DomainManagement from './pages/DomainManagement';
 import ExceptionalReviews from './components/ExceptionalReviews';
 import './index.css';
@@ -61,45 +58,10 @@ const AppContent = () => {
           </DashboardLayout>
         </ProtectedRoute>
       } />
-      <Route path="/users" element={
-        <ProtectedRoute>
-          <DashboardLayout>
-            <BadgeManagement />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/fraud" element={
-        <ProtectedRoute>
-          <DashboardLayout>
-            <FraudDetection />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
       <Route path="/badge-management" element={
         <ProtectedRoute>
           <DashboardLayout>
             <BadgeManagement />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/trust-safety" element={
-        <ProtectedRoute>
-          <DashboardLayout>
-            <TrustAndSafety />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/fraud-detection" element={
-        <ProtectedRoute>
-          <DashboardLayout>
-            <FraudDetection />
-          </DashboardLayout>
-        </ProtectedRoute>
-      } />
-      <Route path="/analytics" element={
-        <ProtectedRoute>
-          <DashboardLayout>
-            <Analytics />
           </DashboardLayout>
         </ProtectedRoute>
       } />

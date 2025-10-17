@@ -28,7 +28,13 @@ export default function Reviews() {
   const fetchReviews = async () => {
     try {
       const data = await getReviews();
-      setReviews(data);
+      
+      // Filter out REJECTED reviews from public view
+      const filteredReviews = (data || []).filter(review => {
+        return review.postState !== 'REJECTED';
+      });
+      
+      setReviews(filteredReviews);
     } catch (err) {
       console.error("Error fetching reviews:", err);
     }

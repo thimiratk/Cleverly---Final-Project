@@ -360,6 +360,32 @@ const Profile = () => {
   const handleEditProfile = () => setIsEditModalOpen(true);
   const handleCloseEditModal = () => setIsEditModalOpen(false);
 
+  const handleProfileSave = (updatedData) => {
+    console.log('Profile save handler called with:', updatedData);
+    if (updatedData?.profile) {
+      setUserData(prevData => ({
+        ...prevData,
+        ...updatedData.profile,
+        name: `${updatedData.profile.firstName || prevData.firstName} ${updatedData.profile.lastName || prevData.lastName}`.trim()
+      }));
+    }
+  };
+
+  const handleImageUpdate = (imageType, imageUrl) => {
+    console.log('Image update handler called:', imageType, imageUrl);
+    if (imageType === 'profile') {
+      setUserData(prevData => ({
+        ...prevData,
+        profilePicture: imageUrl
+      }));
+    } else if (imageType === 'cover') {
+      setUserData(prevData => ({
+        ...prevData,
+        coverPicture: imageUrl
+      }));
+    }
+  };
+
   const handleReviewDeleted = (deletedReviewId) => {
     setUserReviews((prevReviews) =>
       prevReviews.filter((review) => (review.id || review._id) !== deletedReviewId)
@@ -540,6 +566,37 @@ const Profile = () => {
               Following
             </div>
           </div>
+
+          {/* Badges Section */}
+          {userData.badges && userData.badges.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Badges</h3>
+              <div className="flex flex-wrap gap-3">
+                {userData.badges.map((badge) => (
+                  <div
+                    key={badge.id || badge._id}
+                    className="group relative flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-full hover:shadow-md transition-all"
+                    title={badge.description}
+                  >
+                    {badge.imageUrl && (
+                      <img
+                        src={badge.imageUrl}
+                        alt={badge.name}
+                        className="w-6 h-6 object-contain"
+                      />
+                    )}
+                    <span className="text-sm font-medium text-gray-800">{badge.name}</span>
+                    
+                    {/* Tooltip on hover */}
+                    <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10">
+                      {badge.description}
+                      <div className="absolute top-full left-1/2 transform -translate-x-1/2 -mt-1 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* --- Divider --- */}
@@ -591,6 +648,8 @@ const Profile = () => {
           isOpen={isEditModalOpen}
           onClose={handleCloseEditModal}
           user={userData}
+          onSave={handleProfileSave}
+          onImageUpdate={handleImageUpdate}
         />
       )}
     </div>

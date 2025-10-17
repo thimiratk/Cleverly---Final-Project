@@ -40,9 +40,36 @@ export const registerUser = async (userData) => {
     };
   } catch (error) {
     console.error('Register error:', error.response?.data || error.message);
+    
+    // Extract error message as a string
+    let errorMessage = 'Registration failed. Please try again.';
+    
+    if (error.response?.data) {
+      const errorData = error.response.data;
+      // Handle different error response formats
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (typeof errorData === 'object') {
+        // Check for nested error object: {error: {message: "...", status: 400}}
+        if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+          errorMessage = errorData.error.message;
+        }
+        // Check for direct error string: {error: "Invalid password"}
+        else if (errorData.error && typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        }
+        // Check for direct message: {message: "Invalid password"}
+        else if (errorData.message && typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        }
+      }
+    } else if (error.message && typeof error.message === 'string') {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.error || error.response?.data?.message || error.message
+      message: errorMessage
     };
   }
 };
@@ -79,9 +106,36 @@ export const verifyUser = async (verificationData) => {
     return response.data;
   } catch (error) {
     console.error('Verify error:', error.response?.data || error.message);
+    
+    // Extract error message as a string
+    let errorMessage = 'Verification failed. Please try again.';
+    
+    if (error.response?.data) {
+      const errorData = error.response.data;
+      // Handle different error response formats
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (typeof errorData === 'object') {
+        // Check for nested error object: {error: {message: "...", status: 400}}
+        if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+          errorMessage = errorData.error.message;
+        }
+        // Check for direct error string: {error: "Invalid password"}
+        else if (errorData.error && typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        }
+        // Check for direct message: {message: "Invalid password"}
+        else if (errorData.message && typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        }
+      }
+    } else if (error.message && typeof error.message === 'string') {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.error || error.response?.data?.message || error.message
+      message: errorMessage
     };
   }
 };
@@ -108,9 +162,36 @@ export const loginUser = async ({ email, password }) => {
     return response.data;
   } catch (error) {
     console.error('Login error:', error.response?.data || error.message);
+    
+    // Extract error message as a string
+    let errorMessage = 'Login failed. Please try again.';
+    
+    if (error.response?.data) {
+      const errorData = error.response.data;
+      // Handle different error response formats
+      if (typeof errorData === 'string') {
+        errorMessage = errorData;
+      } else if (typeof errorData === 'object') {
+        // Check for nested error object: {error: {message: "...", status: 400}}
+        if (errorData.error && typeof errorData.error === 'object' && errorData.error.message) {
+          errorMessage = errorData.error.message;
+        } 
+        // Check for direct error string: {error: "Invalid password"}
+        else if (errorData.error && typeof errorData.error === 'string') {
+          errorMessage = errorData.error;
+        }
+        // Check for direct message: {message: "Invalid password"}
+        else if (errorData.message && typeof errorData.message === 'string') {
+          errorMessage = errorData.message;
+        }
+      }
+    } else if (error.message && typeof error.message === 'string') {
+      errorMessage = error.message;
+    }
+    
     return {
       success: false,
-      message: error.response?.data?.error || error.response?.data?.message || error.message
+      message: errorMessage
     };
   }
 };

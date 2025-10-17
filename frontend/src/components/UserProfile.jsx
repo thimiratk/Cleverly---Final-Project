@@ -7,6 +7,7 @@ const UserProfile = ({ userId, isOwnProfile = false, onEditClick }) => {
   const [profile, setProfile] = useState(null);
   const [followStats, setFollowStats] = useState(null);
   const [badges, setBadges] = useState(null);
+  const [trustScore, setTrustScore] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [following, setFollowing] = useState(false);
@@ -43,19 +44,36 @@ const UserProfile = ({ userId, isOwnProfile = false, onEditClick }) => {
         ? userProfileService.getCurrentUserProfile()
         : userProfileService.getUserProfile(userId);
 
-      // Fetch follow stats and badges
+      // Fetch follow stats, badges, and trust score
       const followStatsPromise = userProfileService.getFollowStats(userId);
       const badgesPromise = userProfileService.getUserBadges(userId);
+      
+      // Fetch trust score with fallback
+      const trustScorePromise = userProfileService.getUserTrustScore(userId).catch(err => {
+        console.warn('Trust score fetch failed, using fallback:', err);
+        return null;
+      });
 
-      const [profileData, followStatsData, badgesData] = await Promise.all([
+      const [profileData, followStatsData, badgesData, trustScoreData] = await Promise.all([
         profilePromise,
         followStatsPromise,
-        badgesPromise
+        badgesPromise,
+        trustScorePromise
       ]);
+
+      console.log('=== User Profile Data Debug ===');
+      console.log('Profile Data:', profileData);
+      console.log('Profile Trust Score:', profileData?.trustScore);
+      console.log('Badges Data:', badgesData);
+      console.log('Badges Trust Score:', badgesData?.trustScore);
+      console.log('Trust Score Data:', trustScoreData);
+      console.log('Trust Score Value:', trustScoreData?.trustScore);
+      console.log('=============================');
 
       setProfile(profileData);
       setFollowStats(followStatsData);
       setBadges(badgesData);
+      setTrustScore(trustScoreData);
       const resolvedFollowing = typeof followStatsData?.isFollowing === 'boolean'
         ? followStatsData.isFollowing
         : Boolean(profileData?.isFollowing);
@@ -263,7 +281,7 @@ const UserProfile = ({ userId, isOwnProfile = false, onEditClick }) => {
               <span className="stat-label">Following</span>
             </div>
             <div className="stat-item">
-              <span className="stat-number">{badges?.trustScore || 0}</span>
+              <span className="stat-number">{trustScore?.trustScore || profile?.trustScore || badges?.trustScore || 0}</span>
               <span className="stat-label">Trust Score</span>
             </div>
           </div>
@@ -344,10 +362,37 @@ const UserProfile = ({ userId, isOwnProfile = false, onEditClick }) => {
           <h3>Trust Score</h3>
           <div className="trust-score-display">
             <div className="trust-score-circle">
-              <span className="trust-score-number">{badges?.trustScore || 0}</span>
+              <span className="trust-score-number">{trustScore?.trustScore || profile?.trustScore || badges?.trustScore || 0}</span>
+              <span className="trust-score-max">/100</span>
             </div>
             <div className="trust-score-info">
               <p>Trust score is based on verified reviews, community feedback, and account activity.</p>
+              {trustScore?.breakdown && trustScore.breakdown.totalReviews > 0 ? (
+                <div className="trust-score-breakdown">
+                  <div className="breakdown-item">
+                    <span className="breakdown-label">Total Reviews:</span>
+                    <span className="breakdown-value">{trustScore.breakdown.totalReviews}</span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="breakdown-label">Verified Reviews:</span>
+                    <span className="breakdown-value">{trustScore.breakdown.verifiedReviews}</span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="breakdown-label">Community Agrees:</span>
+                    <span className="breakdown-value">{trustScore.breakdown.totalAgreeCount}</span>
+                  </div>
+                  <div className="breakdown-item">
+                    <span className="breakdown-label">Agreement Rate:</span>
+                    <span className="breakdown-value">{trustScore.breakdown.averageAgreePercentage?.toFixed(1)}%</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="trust-score-message">
+                  <p style={{ color: '#666', fontStyle: 'italic', marginTop: '10px' }}>
+                    No reviews yet. Write reviews to start building your trust score!
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

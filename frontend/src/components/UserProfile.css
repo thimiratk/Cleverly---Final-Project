@@ -343,20 +343,28 @@
 }
 
 .trust-score-circle {
-  width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   border-radius: 50%;
   background: linear-gradient(135deg, #007bff, #0056b3);
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
 }
 
 .trust-score-number {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: bold;
   color: white;
+  line-height: 1;
+}
+
+.trust-score-max {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-top: 2px;
 }
 
 .trust-score-info {
@@ -367,7 +375,36 @@
   font-size: 16px;
   color: #666;
   line-height: 1.6;
-  margin: 0;
+  margin: 0 0 15px 0;
+}
+
+.trust-score-breakdown {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.breakdown-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-left: 3px solid #007bff;
+}
+
+.breakdown-label {
+  font-size: 13px;
+  color: #666;
+  font-weight: 500;
+}
+
+.breakdown-value {
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
 }
 
 /* Loading and Error States */

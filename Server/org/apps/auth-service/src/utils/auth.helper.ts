@@ -78,11 +78,18 @@ export const trackOtpRequest = async(email: string,next:NextFunction) => {
 }
 
 export const sendOtp = async(email:string, name:string, template:string) => {
-    const otp = crypto.randomInt(100000, 999999).toString();
-    await sendMail(email, "Your OTP Code", template, {name, otp});
-    await redis.set(`otp:${email}`, otp, 'EX', 10 * 60); // OTP valid for 10 minutes
-    await redis.set(`otp_cooldown:${email}`, 'true', 'EX', 2 * 60); // Cooldown for 2 minutes       
+    try {
+        const otp = crypto.randomInt(100000, 999999).toString();
+        console.log(`Sending OTP to ${email} using template ${template}`);
+        await sendMail(email, "Your OTP Code", template, {name, otp});
+        console.log(`OTP sent successfully to ${email}`);
+        await redis.set(`otp:${email}`, otp, 'EX', 10 * 60); // OTP valid for 10 minutes
+        await redis.set(`otp_cooldown:${email}`, 'true', 'EX', 2 * 60); // Cooldown for 2 minutes
+    } catch (error) {
+        console.error('Error in sendOtp:', error);
+        throw new ValidationError("Failed to send OTP. Please check your email configuration.");
     }
+}
 export const verfyOtp = async(email:string, otp:string,next:NextFunction) => {
     const storedOtp = await redis.get(`otp:${email}`);
     if (!storedOtp) {

@@ -59,10 +59,18 @@ export default function Login() {
     if (result.success) {
       toast.success('Login successful!');
     } else {
-      toast.error(result.message);
+      // Ensure message is a string, not an object
+      const errorMessage = typeof result.message === 'string' 
+        ? result.message 
+        : result.message?.message || 'Login failed. Please check your credentials.';
+      toast.error(errorMessage);
     }
   } catch (error) {
-    toast.error(error.message || "Login failed. Please check your credentials.");
+    // Ensure error message is a string
+    const errorMessage = typeof error === 'string' 
+      ? error 
+      : error.message || "Login failed. Please check your credentials.";
+    toast.error(errorMessage);
   } finally {
     setIsLoading(false);
   }

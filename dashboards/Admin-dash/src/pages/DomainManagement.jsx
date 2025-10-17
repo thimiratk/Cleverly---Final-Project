@@ -54,7 +54,8 @@ const DomainManagement = () => {
   const fetchCategories = async () => {
     try {
       setLoading(true);
-      const categoriesData = await domainAPI.getCategories();
+      const response = await domainAPI.getCategories();
+      const categoriesData = response.categories || [];
       
       // Fetch subcategories for each category
       const categoriesWithSubs = await Promise.all(

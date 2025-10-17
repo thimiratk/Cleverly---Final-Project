@@ -12,6 +12,7 @@ import Trendings from "./pages/Trendings";
 import Discover from "./pages/Discover";
 import Profile from "./pages/Profile";
 import ProfileEditModal from "./pages/ProfileEditModal";
+import SearchResults from "./pages/SearchResults";
 
 import { AuthProvider } from "./context/AuthContext";
 
@@ -52,6 +53,7 @@ function AppContent() {
         
         <Route path="/trendings" element={<Trendings />} />
         <Route path="/discover" element={<Discover />} />
+        <Route path="/search" element={<SearchResults />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/user-profile/:userId" element={<Profile />} />
         <Route path="/user-profile" element={<ProfileEditModal />} />

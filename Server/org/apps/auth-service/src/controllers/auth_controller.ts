@@ -284,8 +284,8 @@ export const googleAuthCallback = async (req: Request, res: Response, next: Next
     setCookie(res, 'refreshToken', refreshToken);
     setCookie(res, 'accessToken', accessToken);
 
-    // Redirect to frontend with success
-    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/reviews`);
+    // Redirect to frontend home page with success
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/`);
     return;
   } catch (error) {
     console.error("Google auth callback error:", error);

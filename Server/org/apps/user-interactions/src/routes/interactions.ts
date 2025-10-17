@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '../../../../generated/prisma';
+import { createNotification, broadcastNotification } from '../utils/notifications';
 
 const router = express.Router();
 
@@ -50,6 +51,38 @@ router.post('/upvote', async (req, res) => {
     const downvotes = await prisma.reviewVotes.count({
       where: { reviewId, voteType: 'DOWNVOTE' }
     });
+
+    // Create notification for review author
+    try {
+      const review = await prisma.reviews.findUnique({
+        where: { id: reviewId },
+        include: { 
+          user: { select: { id: true, name: true, username: true } }
+        }
+      });
+
+      if (review && review.userId !== userId) {
+        const voter = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { name: true, username: true }
+        });
+
+        const notification = await createNotification({
+          userId: review.userId,
+          type: 'REVIEW_VOTE',
+          title: 'New Upvote',
+          message: `${voter?.username || voter?.name} upvoted your review`,
+          data: { reviewId, voteType: 'UPVOTE' },
+          relatedUserId: userId
+        });
+
+        if (notification) {
+          broadcastNotification(ioInstance, review.userId, notification);
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating upvote notification:', notifError);
+    }
 
     // Emit to all connected clients
     if (ioInstance) {
@@ -116,6 +149,38 @@ router.post('/downvote', async (req, res) => {
     const downvotes = await prisma.reviewVotes.count({
       where: { reviewId, voteType: 'DOWNVOTE' }
     });
+
+    // Create notification for review author
+    try {
+      const review = await prisma.reviews.findUnique({
+        where: { id: reviewId },
+        include: { 
+          user: { select: { id: true, name: true, username: true } }
+        }
+      });
+
+      if (review && review.userId !== userId) {
+        const voter = await prisma.users.findUnique({
+          where: { id: userId },
+          select: { name: true, username: true }
+        });
+
+        const notification = await createNotification({
+          userId: review.userId,
+          type: 'REVIEW_VOTE',
+          title: 'New Downvote',
+          message: `${voter?.username || voter?.name} downvoted your review`,
+          data: { reviewId, voteType: 'DOWNVOTE' },
+          relatedUserId: userId
+        });
+
+        if (notification) {
+          broadcastNotification(ioInstance, review.userId, notification);
+        }
+      }
+    } catch (notifError) {
+      console.error('Error creating downvote notification:', notifError);
+    }
 
     // Emit to all connected clients
     if (ioInstance) {

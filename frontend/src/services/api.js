@@ -286,27 +286,43 @@ export const getReviews = async (params = {}) => {
 
 // Category functions - now using domain service
 export const getCategories = async () => {
-  const response = await domainApi.get('/categories');
-  return response.data;
+  try {
+    const response = await domainApi.get('/domain/categories');
+    // Handle both direct array response and wrapped response
+    return response.data.categories || response.data;
+  } catch (error) {
+    console.error('Error fetching categories:', error);
+    throw error;
+  }
 };
 
 export const createCategory = async (categoryData) => {
-  const response = await domainApi.post('/categories', categoryData);
+  const response = await domainApi.post('/domain/categories', categoryData);
   return response.data;
 };
 
 export const getSubCategories = async () => {
-  const response = await domainApi.get('/subcategories');
-  return response.data;
+  try {
+    const response = await domainApi.get('/domain/subcategories');
+    return response.data.subcategories || response.data;
+  } catch (error) {
+    console.error('Error fetching subcategories:', error);
+    throw error;
+  }
 };
 
 export const getSubCategoriesByCategory = async (categoryId) => {
-  const response = await domainApi.get(`/categories/${categoryId}/subcategories`);
-  return response.data;
+  try {
+    const response = await domainApi.get(`/domain/categories/${categoryId}/subcategories`);
+    return response.data.subcategories || response.data;
+  } catch (error) {
+    console.error('Error fetching subcategories by category:', error);
+    throw error;
+  }
 };
 
 export const createSubCategory = async (subCategoryData) => {
-  const response = await domainApi.post('/subcategories', subCategoryData);
+  const response = await domainApi.post('/domain/subcategories', subCategoryData);
   return response.data;
 };
 
@@ -349,14 +365,29 @@ export const getInteractionStats = async (reviewId) => {
 };
 
 // Comment API functions
-export const addComment = async (reviewId, userId, content, parentCommentId = null) => {
+export const addComment = async (reviewId, userId, content, parentCommentId = null, stanceData = null) => {
   return retryWithBackoff(async () => {
-    const response = await API.post('/comments/add', { 
+    const requestBody = { 
       reviewId, 
       userId, 
       content, 
       parentCommentId 
-    });
+    };
+    
+    // Add stance data if provided
+    if (stanceData) {
+      console.log('[API] Adding stance data to request:', stanceData);
+      requestBody.stance = stanceData.stance;
+      requestBody.stanceConfidence = stanceData.confidence;
+      requestBody.stanceReasoning = stanceData.reasoning;
+    } else {
+      console.warn('[API] No stance data provided, comment will be submitted without stance');
+    }
+    
+    console.log('[API] Final request body:', requestBody);
+    
+    const response = await API.post('/comments/add', requestBody);
+    console.log('[API] Comment added successfully, response:', response.data);
     return response.data;
   });
 };
@@ -372,9 +403,20 @@ export const getComments = async (reviewId, options = {}) => {
   });
 };
 
-export const updateComment = async (commentId, content, userId) => {
+export const updateComment = async (commentId, content, userId, stanceData = null) => {
   return retryWithBackoff(async () => {
-    const response = await API.put(`/comments/${commentId}`, { content, userId });
+    const requestBody = { content, userId };
+    
+    // Add stance data if provided
+    if (stanceData) {
+      console.log('[API] Adding stance data to comment update:', stanceData);
+      requestBody.stance = stanceData.stance;
+      requestBody.stanceConfidence = stanceData.confidence;
+      requestBody.stanceReasoning = stanceData.reasoning;
+    }
+    
+    console.log('[API] Updating comment with body:', requestBody);
+    const response = await API.put(`/comments/${commentId}`, requestBody);
     return response.data;
   });
 };

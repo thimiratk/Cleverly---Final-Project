@@ -137,6 +137,26 @@ export const userProfileService = {
       throw error.response?.data || error.message;
     }
   },
+
+  // Get user trust score with breakdown
+  getUserTrustScore: async (userId) => {
+    try {
+      const response = await userProfileApi.get(`${USER_PROFILE_BASE_URL}/${userId}/trust-score`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
+
+  // Update user trust score (recalculate)
+  updateTrustScore: async (userId) => {
+    try {
+      const response = await userProfileApi.put(`${USER_PROFILE_BASE_URL}/${userId}/trust-score`);
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || error.message;
+    }
+  },
 };
 
 export default userProfileService;

@@ -285,17 +285,51 @@ export const deleteReview = async (req: Request, res: Response, next: NextFuncti
 // Get reviews with optional filters
 export const getReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { categoryId, subCategoryId, productOrService, userId } = req.query;
+    const { categoryId, subCategoryId, productOrService, userId, postState } = req.query;
 
     const filters: any = {};
     if (categoryId) filters.categoryId = categoryId;
     if (subCategoryId) filters.subCategoryId = subCategoryId;
     if (productOrService) filters.productOrService = productOrService;
     if (userId) filters.userId = userId; // Add user filtering
+    if (postState) filters.postState = postState; // Add postState filtering for admin dashboard
 
     const reviews = await prisma.reviews.findMany({
       where: filters,
-      include: {
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        // Stance detection counts
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        // Analysis outputs
+        ruleFraudResult: true,
+        mlFraudResult: true,
+        sentimentResult: true,
+        analysisErrors: true,
+        analysisCompletedAt: true,
+        // Admin verification
+        postState: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -344,12 +378,186 @@ export const getReviewCount = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+// Search reviews
+export const searchReviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { q, limit = 50, sortBy = 'relevance' } = req.query;
+    
+    if (!q || typeof q !== 'string' || q.trim().length === 0) {
+      res.status(200).json({ reviews: [], total: 0 });
+      return;
+    }
+
+    const searchTerm = q.trim().toLowerCase();
+    
+    // Build search filters using Prisma's OR conditions
+    const searchFilters: any = {
+      OR: [
+        {
+          product: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          reviewText: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          exceptionalCategory: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          exceptionalSubCategory: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          category: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          subCategory: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          user: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        }
+      ]
+    };
+
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' }; // Default to recent
+    
+    if (sortBy === 'popular') {
+      orderBy = { upvotesCount: 'desc' };
+    } else if (sortBy === 'recent') {
+      orderBy = { createdAt: 'desc' };
+    }
+
+    const reviews = await prisma.reviews.findMany({
+      where: searchFilters,
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        postState: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      },
+      orderBy,
+      take: Number(limit),
+    });
+
+    res.status(200).json({ 
+      reviews,
+      total: reviews.length,
+      query: q
+    });
+  } catch (error) {
+    console.error('Search error:', error);
+    next(error);
+  }
+};
+
 // Get exceptional reviews (for admin dashboard)
 export const getExceptionalReviews = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const exceptionalReviews = await prisma.reviews.findMany({
       where: { isExceptional: true },
-      include: {
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        // Stance detection counts
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        // Analysis outputs
+        ruleFraudResult: true,
+        mlFraudResult: true,
+        sentimentResult: true,
+        analysisErrors: true,
+        analysisCompletedAt: true,
+        // Admin verification
+        postState: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
         user: {
           select: {
             id: true,
@@ -589,6 +797,42 @@ export const getAdminStats = async (req: Request, res: Response, next: NextFunct
       where: { isExceptional: true }
     });
 
+    // Get reviews count by postState for verification dashboard
+    const pendingReviews = await prisma.reviews.count({
+      where: { postState: 'PENDING' }
+    });
+
+    const verifiedReviews = await prisma.reviews.count({
+      where: { postState: 'VERIFIED' }
+    });
+
+    const rejectedReviews = await prisma.reviews.count({
+      where: { postState: 'REJECTED' }
+    });
+
+    const flaggedReviews = await prisma.reviews.count({
+      where: { postState: 'FLAGGED' }
+    });
+
+    // Get verified today count
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const verifiedToday = await prisma.reviews.count({
+      where: {
+        postState: 'VERIFIED',
+        reviewedAt: {
+          gte: todayStart
+        }
+      }
+    });
+
+    // Calculate accuracy rate (verified / (verified + rejected))
+    const totalVerifiedOrRejected = verifiedReviews + rejectedReviews;
+    const accuracyRate = totalVerifiedOrRejected > 0 
+      ? ((verifiedReviews / totalVerifiedOrRejected) * 100).toFixed(1) 
+      : 0;
+
     // Get reviews by rating distribution
     const ratingDistribution = await prisma.reviews.groupBy({
       by: ['rating'],
@@ -672,6 +916,14 @@ export const getAdminStats = async (req: Request, res: Response, next: NextFunct
         recentReviews,
         conversionRate: totalReviews > 0 ? ((totalReviews - exceptionalReviews) / totalReviews * 100).toFixed(1) : 0
       },
+      verification: {
+        pendingReviews,
+        verifiedReviews,
+        rejectedReviews,
+        flaggedReviews,
+        verifiedToday,
+        accuracyRate
+      },
       ratingDistribution: ratingDistribution.map((rating: any) => ({
         rating: rating.rating,
         count: rating._count.rating
@@ -688,5 +940,226 @@ export const getAdminStats = async (req: Request, res: Response, next: NextFunct
   } catch (error) {
     console.error('Error fetching admin stats:', error);
     next(error);
+  }
+};
+
+// Admin: Approve a review (set postState to VERIFIED)
+export const approveReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'VERIFIED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Verified ✅',
+          message: 'Your review has been verified and is now visible to all users',
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'VERIFIED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating verification notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review approved successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error approving review:', error);
+    return next(error);
+  }
+};
+
+// Admin: Reject a review (set postState to REJECTED)
+export const rejectReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'REJECTED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Rejected ❌',
+          message: `Your review has been rejected${adminNotes ? ': ' + adminNotes : ''}`,
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'REJECTED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating rejection notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review rejected successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error rejecting review:', error);
+    return next(error);
+  }
+};
+
+// Admin: Flag a review for manual review (set postState to FLAGGED)
+export const flagReviewForManualReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'FLAGGED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Flagged 🚩',
+          message: `Your review has been flagged for manual review${adminNotes ? ': ' + adminNotes : ''}`,
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'FLAGGED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating flag notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review flagged for manual review successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error flagging review:', error);
+    return next(error);
+  }
+};
+
+// Get community stats for public display
+export const getCommunityStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get total reviews count (all reviews in database)
+    const totalReviews = await prisma.reviews.count();
+
+    // Get total unique users who have posted reviews (all time)
+    const activeUsers = await prisma.reviews.groupBy({
+      by: ['userId']
+    });
+
+    // Get verified reviews count
+    const verifiedReviews = await prisma.reviews.count({
+      where: {
+        postState: 'VERIFIED'
+      }
+    });
+
+    console.log('Community Stats:', {
+      totalReviews,
+      activeUsers: activeUsers.length,
+      verifiedReviews
+    });
+
+    return res.json({
+      totalReviews,
+      activeUsers: activeUsers.length,
+      verifiedReviews
+    });
+  } catch (error) {
+    console.error('Error getting community stats:', error);
+    return next(error);
   }
 };

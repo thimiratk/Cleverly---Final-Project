@@ -1,12 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import prisma from '../../../../packages/libs/prisma';
 import { ValidationError } from '../../../../packages/error-handler';
-import { analyzeStance } from '../utils/stance-analysis';
 
-// Create a new comment with stance detection
+// Create a new comment (stance detection now handled in frontend)
 export const createComment = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { content, userId, reviewId, parentCommentId } = req.body;
+    const { content, userId, reviewId, parentCommentId, stance, stanceConfidence, stanceReasoning } = req.body;
+
+    // DEBUG: Log all received data
+    console.log('[CREATE COMMENT] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('[CREATE COMMENT] Extracted stance:', stance);
+    console.log('[CREATE COMMENT] Extracted stanceConfidence:', stanceConfidence);
+    console.log('[CREATE COMMENT] Extracted stanceReasoning:', stanceReasoning);
 
     if (!content || !userId || !reviewId) {
       throw new ValidationError('Missing required fields: content, userId, reviewId');
@@ -38,13 +43,18 @@ export const createComment = async (req: Request, res: Response, next: NextFunct
       }
     }
 
-    // Create the comment first
+    // Create the comment with stance data from frontend
     const newComment = await prisma.reviewComments.create({
       data: {
         content,
         userId,
         reviewId,
         parentCommentId,
+        // Stance fields from frontend
+        stance: stance || null,
+        stanceConfidence: stanceConfidence || null,
+        stanceReasoning: stanceReasoning || null,
+        stanceAnalyzedAt: stance ? new Date() : null,
       },
       include: {
         user: {
@@ -72,46 +82,14 @@ export const createComment = async (req: Request, res: Response, next: NextFunct
       },
     });
 
-    // Perform stance analysis asynchronously
-    console.log('Starting stance analysis for comment:', newComment.id);
-    analyzeStance({
-      reviewText: review.reviewText,
-      commentText: content,
-    }).then(async (stanceResult) => {
-      try {
-        console.log('Stance analysis result:', stanceResult);
-        if (stanceResult.result) {
-          console.log('Updating comment with stance data:', {
-            commentId: newComment.id,
-            stance: stanceResult.result.stance,
-            confidence: stanceResult.result.confidence
-          });
-          
-          // Update the comment with stance data
-          await prisma.reviewComments.update({
-            where: { id: newComment.id },
-            data: {
-              stance: stanceResult.result.stance,
-              stanceConfidence: stanceResult.result.confidence,
-              stanceReasoning: stanceResult.result.reasoning,
-              stanceAnalyzedAt: new Date(),
-            },
-          });
-
-          console.log('Comment updated successfully with stance data');
-
-          // Update the review's stance counts
-          await updateReviewStanceCounts(reviewId);
-          console.log('Review stance counts updated');
-        } else {
-          console.log('No stance result returned from analysis');
-        }
-      } catch (error) {
-        console.error('Failed to update stance analysis:', error);
-      }
-    }).catch((error) => {
-      console.error('Stance analysis failed:', error);
-    });
+    // Update review stance counts if stance was provided
+    if (stance) {
+      console.log(`[Stance Update] Comment stance: ${stance}, Confidence: ${stanceConfidence}, ReviewId: ${reviewId}`);
+      await updateReviewStanceCounts(reviewId);
+      console.log(`[Stance Update] Review stance counts updated for reviewId: ${reviewId}`);
+    } else {
+      console.log(`[Stance Update] No stance provided for comment, skipping stance count update`);
+    }
 
     // Update comments count on the review
     await prisma.reviews.update({
@@ -243,6 +221,8 @@ export const getCommentStance = async (req: Request, res: Response, next: NextFu
 // Update review stance counts based on all its comments
 async function updateReviewStanceCounts(reviewId: string) {
   try {
+    console.log(`[updateReviewStanceCounts] Starting stance count update for reviewId: ${reviewId}`);
+    
     const stanceCounts = await prisma.reviewComments.groupBy({
       by: ['stance'],
       where: {
@@ -255,6 +235,8 @@ async function updateReviewStanceCounts(reviewId: string) {
         stance: true,
       },
     });
+
+    console.log(`[updateReviewStanceCounts] Found stance groups:`, JSON.stringify(stanceCounts, null, 2));
 
     const counts = {
       agreeCount: 0,
@@ -277,82 +259,34 @@ async function updateReviewStanceCounts(reviewId: string) {
       }
     });
 
+    console.log(`[updateReviewStanceCounts] Calculated counts:`, counts);
+
     await prisma.reviews.update({
       where: { id: reviewId },
       data: counts,
     });
+    
+    console.log(`[updateReviewStanceCounts] Successfully updated review stance counts`);
   } catch (error) {
     console.error('Error updating review stance counts:', error);
   }
 }
 
 // Re-analyze stance for all comments of a review (admin function)
+// NOTE: This function is deprecated as stance detection is now handled in frontend
 export const reanalyzeReviewStances = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { reviewId } = req.params;
 
-    // Get the review and all its comments
-    const review = await prisma.reviews.findUnique({
-      where: { id: reviewId },
-      include: {
-        comments: {
-          select: {
-            id: true,
-            content: true,
-          },
-        },
-      },
-    });
-
-    if (!review) {
-      throw new ValidationError('Review not found');
-    }
-
-    // Analyze stance for all comments
-    let successCount = 0;
-    let errorCount = 0;
-
-    for (const comment of review.comments) {
-      try {
-        const stanceResult = await analyzeStance({
-          reviewText: review.reviewText,
-          commentText: comment.content,
-        });
-
-        if (stanceResult.result) {
-          await prisma.reviewComments.update({
-            where: { id: comment.id },
-            data: {
-              stance: stanceResult.result.stance,
-              stanceConfidence: stanceResult.result.confidence,
-              stanceReasoning: stanceResult.result.reasoning,
-              stanceAnalyzedAt: new Date(),
-            },
-          });
-          successCount++;
-        } else {
-          errorCount++;
-        }
-      } catch (error) {
-        console.error(`Failed to analyze stance for comment ${comment.id}:`, error);
-        errorCount++;
-      }
-    }
-
-    // Update the review stance counts
+    // Just recalculate the stance counts from existing stance data
     await updateReviewStanceCounts(reviewId);
 
     res.json({
       success: true,
-      message: `Stance analysis completed: ${successCount} successful, ${errorCount} failed`,
-      results: {
-        total: review.comments.length,
-        successful: successCount,
-        failed: errorCount,
-      },
+      message: 'Stance counts recalculated from existing comment stance data',
     });
   } catch (error) {
-    console.error('Error re-analyzing review stances:', error);
+    console.error('Error recalculating review stance counts:', error);
     next(error);
   }
 };

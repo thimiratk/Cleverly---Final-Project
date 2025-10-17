@@ -20,7 +20,7 @@ app.use(cors({
 app.use(express.json());
 
 // API routes
-app.use('/', domainRoutes);
+app.use('/api/domain', domainRoutes);
 
 // Default route
 app.get('/', (_, res) => {

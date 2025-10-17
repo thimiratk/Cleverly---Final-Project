@@ -45,6 +45,21 @@ export const reviewService = {
       throw error;
     }
   },
+
+  // Get community stats
+  getCommunityStats: async () => {
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_GATEWAY_URL || 'http://localhost:8080/api';
+      const response = await fetch(`${API_BASE_URL}/reviews/community/stats`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch community stats');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching community stats:', error);
+      throw error;
+    }
+  },
 };
 
 export default reviewService;
