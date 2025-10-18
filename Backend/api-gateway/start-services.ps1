@@ -35,11 +35,18 @@ Start-Service -ServiceName "Sentiment Analysis" `
 
 Start-Sleep -Seconds 2
 
+Start-Service -ServiceName "Stance Detection" `
+              -Path "$BackendDir\stanceDetection" `
+              -Command "uvicorn app:app --host 0.0.0.0 --port 8004 --reload"
+
+Start-Sleep -Seconds 2
+
 Write-Host "`n========================================" -ForegroundColor Green
 Write-Host "All services started!" -ForegroundColor Green
 Write-Host "========================================" -ForegroundColor Green
 Write-Host "Rule-based Fraud Detection: http://localhost:8001" -ForegroundColor Yellow
 Write-Host "ML-based Fraud Detection:   http://localhost:8002" -ForegroundColor Yellow
 Write-Host "Sentiment Analysis:         http://localhost:8003" -ForegroundColor Yellow
+Write-Host "Stance Detection:           http://localhost:8004" -ForegroundColor Yellow
 Write-Host "`nIf using Nginx gateway:    http://localhost" -ForegroundColor Cyan
 Write-Host "`nPress Ctrl+C in each window to stop services" -ForegroundColor Gray

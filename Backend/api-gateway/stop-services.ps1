@@ -32,4 +32,7 @@ Stop-ProcessOnPort -Port 8002
 Write-Host "Stopping Sentiment Analysis (Port 8003)..." -ForegroundColor Cyan
 Stop-ProcessOnPort -Port 8003
 
+Write-Host "Stopping Stance Detection (Port 8004)..." -ForegroundColor Cyan
+Stop-ProcessOnPort -Port 8004
+
 Write-Host "`nAll services stopped!" -ForegroundColor Green
