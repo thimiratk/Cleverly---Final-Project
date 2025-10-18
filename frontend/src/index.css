@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+/* Hide scrollbar for stories section */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.hide-scrollbar::-webkit-scrollbar { 
+  display: none;  /* Safari and Chrome */
+}
+
+@keyframes drawText {
+  0% {
+    background: linear-gradient(90deg, #9333ea 0%, #9333ea 0%, transparent 0%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
+    background-size: 0% 100%;
+  }
+  100% {
+    background: linear-gradient(90deg, #9333ea 100%, #9333ea 100%, transparent 100%);
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: #9333ea;
+    background-size: 100% 100%;
+  }
+}
+
+@keyframes loadingBar {
+  0%, 100% {
+    transform: scaleX(0.3);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+.loading-h1 {
+  background: linear-gradient(90deg, #9333ea 0%, #9333ea 0%, transparent 0%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  background-size: 0% 100%;
+}

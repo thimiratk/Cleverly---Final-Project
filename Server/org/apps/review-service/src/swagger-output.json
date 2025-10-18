@@ -1,0 +1,122 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Review Service",
+    "description": "Review Service API",
+    "version": "1.0.0"
+  },
+  "host": "localhost:6002",
+  "basePath": "/",
+  "schemes": [
+    "http"
+  ],
+  "paths": {
+    "/reviews": {
+      "post": {
+        "description": "Create a new review",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "example": "any"
+                },
+                "subCategory": {
+                  "example": "any"
+                },
+                "productOrService": {
+                  "example": "any"
+                },
+                "product": {
+                  "example": "any"
+                },
+                "rating": {
+                  "example": "any"
+                },
+                "reviewText": {
+                  "example": "any"
+                },
+                "photos": {
+                  "example": "any"
+                },
+                "videos": {
+                  "example": "any"
+                },
+                "userId": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "description": "Get reviews",
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/reviews/{id}": {
+      "put": {
+        "description": "Update a review",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "body",
+            "in": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category": {
+                  "example": "any"
+                },
+                "subCategory": {
+                  "example": "any"
+                },
+                "productOrService": {
+                  "example": "any"
+                },
+                "product": {
+                  "example": "any"
+                },
+                "rating": {
+                  "example": "any"
+                },
+                "reviewText": {
+                  "example": "any"
+                },
+                "photos": {
+                  "example": "any"
+                },
+                "videos": {
+                  "example": "any"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  }
+}

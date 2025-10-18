@@ -1,0 +1,301 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum VoteType {
+  UPVOTE
+  DOWNVOTE
+}
+
+enum NotificationType {
+  FOLLOW
+  REVIEW_VOTE
+  COMMENT
+  COMMENT_LIKE
+  REVIEW_STATUS
+}
+
+enum PostState {
+  PENDING
+  VERIFIED
+  REJECTED
+  FLAGGED
+}
+
+model images {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  file_id String
+  url String
+  userId String? @unique @db.ObjectId 
+  users users? @relation(fields: [userId], references: [id])
+}
+
+
+model users {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  email String @unique
+  password String?
+  provider String?
+  avatar images?
+  role UserRole @default(USER)
+  
+  // User Profile Fields
+  username String?
+  firstName String?
+  lastName String?
+  bio String?
+  profilePicture String?
+  coverPicture String?
+  trustScore Int @default(0)
+  followersCount Int @default(0)
+  followingCount Int @default(0)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  reviews reviews[]
+  badges userBadges[]
+  assignedBadges UserBadge[] // New badge system
+  
+  // User interaction relationships
+  reviewVotes reviewVotes[]
+  commentLikes commentLikes[]
+  comments reviewComments[]
+  followersRelation userFollows[] @relation("UserFollowers")
+  followingRelation userFollows[] @relation("UserFollowing")
+  notifications notifications[]
+
+}
+
+// Badge template/definition model
+model Badge {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String @unique
+  description String
+  imageUrl String? // Cloudinary URL (auto-compressed to 200x200, stored when badge is created)
+  category String // "all" or specific category
+  
+  // Criteria stored as JSON for flexibility
+  criteria Json // {followers: {enabled: true, operator: "more_than", value: 100}, reviews: {...}}
+  
+  isActive Boolean @default(true)
+  createdBy String? @db.ObjectId // Admin who created this badge
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  userBadges UserBadge[]
+}
+
+// User badge assignment model (many-to-many with metadata)
+model UserBadge {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badgeId String @db.ObjectId
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  assignedBy String? @db.ObjectId // Admin who assigned this badge
+  assignedAt DateTime @default(now())
+  
+  // Metadata at time of assignment
+  criteriaMetAt Json? // Snapshot of user stats when badge was assigned
+  
+  @@unique([userId, badgeId])
+}
+
+// Legacy model - keeping for backward compatibility
+model userBadges {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  description String
+  iconUrl String?
+  earnedAt DateTime @default(now())
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id])
+}
+
+model categories {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  subCategories subCategories[]
+  reviews reviews[]
+  moderators moderators[] @relation(fields: [moderatorIds], references: [id])
+  moderatorIds String[] @db.ObjectId
+}
+
+model subCategories {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  name String
+  categoryId String @db.ObjectId
+  category categories @relation(fields: [categoryId], references: [id])
+  reviews reviews[]
+}
+
+model reviews {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Standard category references
+  categoryId String? @db.ObjectId
+  category categories? @relation(fields: [categoryId], references: [id])
+  subCategoryId String? @db.ObjectId
+  subCategory subCategories? @relation(fields: [subCategoryId], references: [id])
+  
+  // Exceptional category fields for custom user input
+  exceptionalCategory String?
+  exceptionalSubCategory String?
+  isExceptional Boolean @default(false)
+  
+  productOrService String
+  product String
+  rating Int
+  reviewText String
+  photos String[]
+  videos String[]
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id])
+  
+  // Relationships for interactions
+  votes reviewVotes[]
+  comments reviewComments[]
+  
+  // Computed fields for counts
+  upvotesCount Int @default(0)
+  downvotesCount Int @default(0)
+  commentsCount Int @default(0)
+  
+  // Stance detection counts
+  agreeCount Int @default(0)
+  disagreeCount Int @default(0)
+  neutralStanceCount Int @default(0)
+
+  // Automated analysis outputs
+  ruleFraudResult Json?
+  mlFraudResult Json?
+  sentimentResult Json?
+  analysisErrors String[] @default([])
+  analysisCompletedAt DateTime?
+  
+  // Admin verification status
+  postState PostState @default(PENDING)
+  reviewedBy String? // Admin who reviewed this (can be ObjectId or string identifier)
+  reviewedAt DateTime? // When the review was verified/rejected/flagged
+  adminNotes String? // Optional notes from admin
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model reviewComments {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  content String
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId String @db.ObjectId
+  review reviews @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  parentCommentId String? @db.ObjectId
+  parentComment reviewComments? @relation("CommentReplies", fields: [parentCommentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies reviewComments[] @relation("CommentReplies")
+  likes commentLikes[]
+  likesCount Int @default(0)
+  
+  // Stance detection fields
+  stance String? // AGREE, DISAGREE, NEUTRAL
+  stanceConfidence Float? // 0.0 to 1.0
+  stanceReasoning String?
+  stanceAnalyzedAt DateTime?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// New models for user interactions
+
+model reviewVotes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewId String @db.ObjectId
+  review reviews @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  voteType VoteType
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, reviewId])
+}
+
+model commentLikes {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  commentId String @db.ObjectId
+  comment reviewComments @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, commentId])
+}
+
+model userFollows {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  followerId String @db.ObjectId
+  follower users @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String @db.ObjectId
+  followedUser users @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  
+  @@unique([followerId, followingId])
+}
+
+model notifications {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user users @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type NotificationType
+  title String
+  message String
+  data Json? // Additional data for the notification
+  relatedUserId String? @db.ObjectId // User who triggered the notification
+  isRead Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+}
+
+model moderators {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  username String @unique
+  email String @unique
+  password String
+  name String?
+  
+  // Assigned categories for moderation
+  assignedCategories String[] @db.ObjectId
+  categories categories[] @relation(fields: [assignedCategories], references: [id])
+  
+  // Status and permissions
+  isActive Boolean @default(true)
+  permissions String[] @default(["MODERATE_REVIEWS", "MANAGE_COMMENTS", "BAN_USERS"])
+  
+  // Audit fields
+  createdBy String? @db.ObjectId // Admin who created this moderator
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

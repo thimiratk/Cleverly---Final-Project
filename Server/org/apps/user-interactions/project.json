@@ -1,0 +1,73 @@
+{
+  "name": "@org/user-interactions",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/user-interactions/src",
+  "projectType": "application",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/webpack:webpack",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "target": "node",
+        "compiler": "tsc",
+        "outputPath": "apps/user-interactions/dist",
+        "main": "apps/user-interactions/src/main.ts",
+        "tsConfig": "apps/user-interactions/tsconfig.app.json",
+        "assets": ["apps/user-interactions/src/assets"],
+        "isolatedConfig": true,
+        "webpackConfig": "apps/user-interactions/webpack.config.js"
+      },
+      "configurations": {
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "inspect": false
+        },
+        "production": {
+          "optimization": true,
+          "extractLicenses": true,
+          "inspect": false,
+          "fileReplacements": [
+            {
+              "replace": "apps/user-interactions/src/environments/environment.ts",
+              "with": "apps/user-interactions/src/environments/environment.prod.ts"
+            }
+          ]
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "@org/user-interactions:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "@org/user-interactions:build:development"
+        },
+        "production": {
+          "buildTarget": "@org/user-interactions:build:production"
+        }
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": ["apps/user-interactions/**/*.ts"]
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "apps/user-interactions/jest.config.ts"
+      }
+    }
+  }
+}

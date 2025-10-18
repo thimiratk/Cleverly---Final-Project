@@ -1,0 +1,1165 @@
+import { Request, Response, NextFunction } from 'express';
+import { Prisma } from '@prisma/client';
+import prisma from '../../../../packages/libs/prisma';
+import { ValidationError } from '../../../../packages/error-handler';
+import { deleteAssetsByUrls } from '../utils/cloudinary';
+import { runReviewAnalysis } from '../utils/review-analysis';
+
+const toJsonValue = (value: unknown) => {
+  return value === undefined ? undefined : (value as any);
+};
+
+const reviewInclude = {
+  user: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      profilePicture: true,
+      avatar: {
+        select: {
+          url: true,
+        },
+      },
+    },
+  },
+  category: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+  subCategory: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} as const;
+
+// Create a new review
+export const createReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { 
+      categoryId, 
+      subCategoryId, 
+      exceptionalCategory, 
+      exceptionalSubCategory,
+      productOrService, 
+      product, 
+      rating, 
+      reviewText, 
+      photos, 
+      videos, 
+      userId 
+    } = req.body;
+
+    const numericRating = typeof rating === 'string' ? Number.parseInt(rating, 10) : rating;
+
+    // Validate required fields
+    if (!productOrService || !product || !reviewText || !userId) {
+      throw new ValidationError('Missing required fields: productOrService, product, rating, reviewText, userId');
+    }
+
+    if (!Number.isFinite(numericRating)) {
+      throw new ValidationError('rating must be a valid number');
+    }
+
+    // Check if it's an exceptional review (custom category) or standard review
+    // Prioritize exceptional categories - if exceptionalCategory is provided, it's exceptional
+    const isExceptional = Boolean(exceptionalCategory || exceptionalSubCategory);
+    
+    if (!isExceptional && (!categoryId || (typeof categoryId === 'string' && categoryId.trim() === ''))) {
+      throw new ValidationError('Either categoryId or exceptionalCategory is required');
+    }
+
+    const reviewData: any = {
+      productOrService,
+      product,
+  rating: numericRating,
+      reviewText,
+      photos: photos || [],
+      videos: videos || [],
+      userId,
+      isExceptional,
+    };
+
+    if (isExceptional) {
+      // Handle exceptional (custom) categories
+      reviewData.exceptionalCategory = exceptionalCategory;
+      reviewData.exceptionalSubCategory = exceptionalSubCategory;
+    } else {
+      // Handle standard categories - only add if not empty
+      if (categoryId && typeof categoryId === 'string' && categoryId.trim() !== '') {
+        reviewData.categoryId = categoryId;
+      }
+      if (subCategoryId && typeof subCategoryId === 'string' && subCategoryId.trim() !== '') {
+        reviewData.subCategoryId = subCategoryId;
+      }
+    }
+
+    const analysis = await runReviewAnalysis({
+      reviewText,
+      rating: numericRating,
+      userId,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    });
+
+    const newReview = await prisma.reviews.create({
+      data: reviewData,
+      include: reviewInclude,
+    });
+
+    const reviewWithAnalysis = await prisma.reviews.update({
+      where: { id: newReview.id },
+      data: {
+        ruleFraudResult: toJsonValue(analysis.ruleFraudResult),
+        mlFraudResult: toJsonValue(analysis.mlFraudResult),
+        sentimentResult: toJsonValue(analysis.sentimentResult),
+        analysisErrors: analysis.errors,
+        analysisCompletedAt: analysis.completedAt,
+      },
+      include: reviewInclude,
+    });
+
+    res.status(201).json(reviewWithAnalysis);
+  } catch (error) {
+    console.error('Error creating review:', error);
+    next(error);
+  }
+};
+
+// Update an existing review (text and media only)
+export const updateReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const reviewId = req.params.id;
+    const { reviewText, photos, videos, userId } = req.body;
+
+    if (!userId) {
+      throw new ValidationError('userId is required');
+    }
+
+    const existingReview = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        userId: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        rating: true,
+      },
+    });
+
+    if (!existingReview) {
+      throw new ValidationError('Review not found');
+    }
+
+    if (existingReview.userId !== userId) {
+      throw new ValidationError('You are not authorized to edit this review');
+    }
+
+    let normalizedReviewText = existingReview.reviewText;
+    if (typeof reviewText === 'string') {
+      const trimmed = reviewText.trim();
+      if (trimmed.length === 0) {
+        throw new ValidationError('Review text cannot be empty');
+      }
+      normalizedReviewText = trimmed;
+    }
+
+    const submittedPhotos = Array.isArray(photos) ? photos : existingReview.photos;
+    const submittedVideos = Array.isArray(videos) ? videos : existingReview.videos;
+
+    const removedPhotos = existingReview.photos.filter((photoUrl: string) => !submittedPhotos.includes(photoUrl));
+    const removedVideos = existingReview.videos.filter((videoUrl: string) => !submittedVideos.includes(videoUrl));
+
+    if (removedPhotos.length > 0) {
+      await deleteAssetsByUrls(removedPhotos);
+    }
+    if (removedVideos.length > 0) {
+      await deleteAssetsByUrls(removedVideos);
+    }
+
+    const analysis = await runReviewAnalysis({
+      reviewText: normalizedReviewText,
+      rating: existingReview.rating,
+      userId,
+      ipAddress: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    });
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id: reviewId },
+      data: {
+        reviewText: normalizedReviewText,
+        photos: submittedPhotos,
+        videos: submittedVideos,
+        ruleFraudResult: toJsonValue(analysis.ruleFraudResult),
+        mlFraudResult: toJsonValue(analysis.mlFraudResult),
+        sentimentResult: toJsonValue(analysis.sentimentResult),
+        analysisErrors: analysis.errors,
+        analysisCompletedAt: analysis.completedAt,
+      },
+      include: reviewInclude,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Review updated successfully',
+      review: updatedReview,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Delete a review and associated media/interactions
+export const deleteReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const reviewId = req.params.id;
+    const bodyUserId = (req.body as any)?.userId;
+    const queryUserId = typeof req.query.userId === 'string' ? req.query.userId : undefined;
+    const userId = bodyUserId ?? queryUserId;
+
+    if (!userId) {
+      throw new ValidationError('userId is required');
+    }
+
+    const existingReview = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: {
+        id: true,
+        userId: true,
+        photos: true,
+        videos: true,
+      },
+    });
+
+    if (!existingReview) {
+      throw new ValidationError('Review not found');
+    }
+
+    if (existingReview.userId !== userId) {
+      throw new ValidationError('You are not authorized to delete this review');
+    }
+
+    const mediaToDelete = [...(existingReview.photos || []), ...(existingReview.videos || [])];
+    if (mediaToDelete.length > 0) {
+      await deleteAssetsByUrls(mediaToDelete);
+    }
+
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const relatedComments = await tx.reviewComments.findMany({
+        where: { reviewId },
+        select: { id: true },
+      });
+
+  const commentIds = relatedComments.map((comment: { id: string }) => comment.id);
+
+      if (commentIds.length > 0) {
+        await tx.commentLikes.deleteMany({
+          where: {
+            commentId: {
+              in: commentIds,
+            },
+          },
+        });
+      }
+
+      await tx.reviewComments.deleteMany({ where: { reviewId } });
+      await tx.reviewVotes.deleteMany({ where: { reviewId } });
+      await tx.reviews.delete({ where: { id: reviewId } });
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Review deleted successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get reviews with optional filters
+export const getReviews = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { categoryId, subCategoryId, productOrService, userId, postState } = req.query;
+
+    const filters: any = {};
+    if (categoryId) filters.categoryId = categoryId;
+    if (subCategoryId) filters.subCategoryId = subCategoryId;
+    if (productOrService) filters.productOrService = productOrService;
+    if (userId) filters.userId = userId; // Add user filtering
+    if (postState) filters.postState = postState; // Add postState filtering for admin dashboard
+
+    const reviews = await prisma.reviews.findMany({
+      where: filters,
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        // Stance detection counts
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        // Analysis outputs
+        ruleFraudResult: true,
+        mlFraudResult: true,
+        sentimentResult: true,
+        analysisErrors: true,
+        analysisCompletedAt: true,
+        // Admin verification
+        postState: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        },
+        comments: true,
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.status(200).json(reviews);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get count of reviews
+export const getReviewCount = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const count = await prisma.reviews.count();
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Search reviews
+export const searchReviews = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { q, limit = 50, sortBy = 'relevance' } = req.query;
+    
+    if (!q || typeof q !== 'string' || q.trim().length === 0) {
+      res.status(200).json({ reviews: [], total: 0 });
+      return;
+    }
+
+    const searchTerm = q.trim().toLowerCase();
+    
+    // Build search filters using Prisma's OR conditions
+    const searchFilters: any = {
+      OR: [
+        {
+          product: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          reviewText: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          exceptionalCategory: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          exceptionalSubCategory: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          category: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          subCategory: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        },
+        {
+          user: {
+            name: {
+              contains: searchTerm,
+              mode: 'insensitive'
+            }
+          }
+        }
+      ]
+    };
+
+    // Determine sort order
+    let orderBy: any = { createdAt: 'desc' }; // Default to recent
+    
+    if (sortBy === 'popular') {
+      orderBy = { upvotesCount: 'desc' };
+    } else if (sortBy === 'recent') {
+      orderBy = { createdAt: 'desc' };
+    }
+
+    const reviews = await prisma.reviews.findMany({
+      where: searchFilters,
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        postState: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      },
+      orderBy,
+      take: Number(limit),
+    });
+
+    res.status(200).json({ 
+      reviews,
+      total: reviews.length,
+      query: q
+    });
+  } catch (error) {
+    console.error('Search error:', error);
+    next(error);
+  }
+};
+
+// Get exceptional reviews (for admin dashboard)
+export const getExceptionalReviews = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const exceptionalReviews = await prisma.reviews.findMany({
+      where: { isExceptional: true },
+      select: {
+        id: true,
+        categoryId: true,
+        subCategoryId: true,
+        exceptionalCategory: true,
+        exceptionalSubCategory: true,
+        isExceptional: true,
+        productOrService: true,
+        product: true,
+        rating: true,
+        reviewText: true,
+        photos: true,
+        videos: true,
+        userId: true,
+        upvotesCount: true,
+        downvotesCount: true,
+        commentsCount: true,
+        // Stance detection counts
+        agreeCount: true,
+        disagreeCount: true,
+        neutralStanceCount: true,
+        // Analysis outputs
+        ruleFraudResult: true,
+        mlFraudResult: true,
+        sentimentResult: true,
+        analysisErrors: true,
+        analysisCompletedAt: true,
+        // Admin verification
+        postState: true,
+        reviewedBy: true,
+        reviewedAt: true,
+        adminNotes: true,
+        createdAt: true,
+        updatedAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    res.status(200).json(exceptionalReviews);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Convert exceptional review to standard categories
+export const convertExceptionalReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { reviewId } = req.params;
+    const { categoryId, subCategoryId } = req.body;
+
+    if (!categoryId) {
+      throw new ValidationError('categoryId is required');
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id: reviewId },
+      data: {
+        categoryId,
+        subCategoryId: subCategoryId || null,
+        isExceptional: false,
+        exceptionalCategory: null,
+        exceptionalSubCategory: null,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
+    });
+
+    res.status(200).json(updatedReview);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create category from exceptional review
+export const createCategoryFromExceptional = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { reviewId } = req.params;
+    const { categoryName } = req.body;
+
+    if (!categoryName) {
+      throw new ValidationError('categoryName is required');
+    }
+
+    // First check if the review exists and has exceptional category
+    const review = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: { 
+        exceptionalCategory: true, 
+        isExceptional: true,
+        exceptionalSubCategory: true 
+      }
+    });
+
+    if (!review || !review.isExceptional || !review.exceptionalCategory) {
+      throw new ValidationError('Review not found or does not have exceptional category');
+    }
+
+    // Create new category
+    const newCategory = await prisma.categories.create({
+      data: { name: categoryName }
+    });
+
+    // Update the review to use the new category
+    const updatedReview = await prisma.reviews.update({
+      where: { id: reviewId },
+      data: {
+        categoryId: newCategory.id,
+        exceptionalCategory: null,
+        // Keep subcategory as exceptional if it exists
+        isExceptional: !!review.exceptionalSubCategory,
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      category: newCategory,
+      review: updatedReview
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Create subcategory from exceptional review
+export const createSubCategoryFromExceptional = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { reviewId } = req.params;
+    const { subcategoryName, categoryId } = req.body;
+
+    if (!subcategoryName || !categoryId) {
+      throw new ValidationError('subcategoryName and categoryId are required');
+    }
+
+    // First check if the review exists and has exceptional subcategory
+    const review = await prisma.reviews.findUnique({
+      where: { id: reviewId },
+      select: { 
+        exceptionalSubCategory: true, 
+        isExceptional: true,
+        categoryId: true 
+      }
+    });
+
+    if (!review || !review.exceptionalSubCategory) {
+      throw new ValidationError('Review not found or does not have exceptional subcategory');
+    }
+
+    // Create new subcategory
+    const newSubCategory = await prisma.subCategories.create({
+      data: { 
+        name: subcategoryName,
+        categoryId: categoryId 
+      }
+    });
+
+    // Update the review to use the new subcategory
+    const updatedReview = await prisma.reviews.update({
+      where: { id: reviewId },
+      data: {
+        subCategoryId: newSubCategory.id,
+        exceptionalSubCategory: null,
+        categoryId: categoryId, // Ensure category is set
+        isExceptional: false, // No more exceptional data
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            profilePicture: true,
+            avatar: {
+              select: {
+                url: true,
+              }
+            }
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        subCategory: {
+          select: {
+            id: true,
+            name: true,
+          }
+        }
+      }
+    });
+
+    res.status(201).json({
+      subcategory: newSubCategory,
+      review: updatedReview
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get admin dashboard stats
+export const getAdminStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get total reviews count
+    const totalReviews = await prisma.reviews.count();
+
+    // Get exceptional reviews count
+    const exceptionalReviews = await prisma.reviews.count({
+      where: { isExceptional: true }
+    });
+
+    // Get reviews count by postState for verification dashboard
+    const pendingReviews = await prisma.reviews.count({
+      where: { postState: 'PENDING' }
+    });
+
+    const verifiedReviews = await prisma.reviews.count({
+      where: { postState: 'VERIFIED' }
+    });
+
+    const rejectedReviews = await prisma.reviews.count({
+      where: { postState: 'REJECTED' }
+    });
+
+    const flaggedReviews = await prisma.reviews.count({
+      where: { postState: 'FLAGGED' }
+    });
+
+    // Get verified today count
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    
+    const verifiedToday = await prisma.reviews.count({
+      where: {
+        postState: 'VERIFIED',
+        reviewedAt: {
+          gte: todayStart
+        }
+      }
+    });
+
+    // Calculate accuracy rate (verified / (verified + rejected))
+    const totalVerifiedOrRejected = verifiedReviews + rejectedReviews;
+    const accuracyRate = totalVerifiedOrRejected > 0 
+      ? ((verifiedReviews / totalVerifiedOrRejected) * 100).toFixed(1) 
+      : 0;
+
+    // Get reviews by rating distribution
+    const ratingDistribution = await prisma.reviews.groupBy({
+      by: ['rating'],
+      _count: { rating: true },
+      orderBy: { rating: 'asc' }
+    });
+
+    // Get recent reviews (last 7 days)
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    const recentReviews = await prisma.reviews.count({
+      where: {
+        createdAt: {
+          gte: sevenDaysAgo
+        }
+      }
+    });
+
+    // Get most popular categories
+    const popularCategories = await prisma.reviews.groupBy({
+      by: ['categoryId'],
+      _count: { categoryId: true },
+      where: {
+        categoryId: { not: null },
+        isExceptional: false
+      },
+      orderBy: { _count: { categoryId: 'desc' } },
+      take: 5
+    });
+
+    // Get category names for popular categories
+    const categoryIds = popularCategories.map((cat: any) => cat.categoryId).filter(Boolean);
+    const categories = await prisma.categories.findMany({
+      where: { id: { in: categoryIds } },
+      select: { id: true, name: true }
+    });
+
+    const popularCategoriesWithNames = popularCategories.map((cat: any) => ({
+      ...cat,
+      categoryName: categories.find((c: any) => c.id === cat.categoryId)?.name || 'Unknown'
+    }));
+
+    // Get most active reviewers (top 5)
+    const activeReviewers = await prisma.reviews.groupBy({
+      by: ['userId'],
+      _count: { userId: true },
+      orderBy: { _count: { userId: 'desc' } },
+      take: 5
+    });
+
+    // Get user names for active reviewers
+    const userIds = activeReviewers.map((reviewer: any) => reviewer.userId);
+    const users = await prisma.users.findMany({
+      where: { id: { in: userIds } },
+      select: { id: true, name: true, email: true }
+    });
+
+    const activeReviewersWithNames = activeReviewers.map((reviewer: any) => ({
+      ...reviewer,
+      user: users.find((u: any) => u.id === reviewer.userId)
+    }));
+
+    // Get exceptional categories list (for admin to convert)
+    const uniqueExceptionalCategories = await prisma.reviews.findMany({
+      where: { 
+        isExceptional: true,
+        exceptionalCategory: { not: null }
+      },
+      select: { 
+        exceptionalCategory: true,
+        exceptionalSubCategory: true 
+      },
+      distinct: ['exceptionalCategory']
+    });
+
+    const stats = {
+      overview: {
+        totalReviews,
+        exceptionalReviews,
+        recentReviews,
+        conversionRate: totalReviews > 0 ? ((totalReviews - exceptionalReviews) / totalReviews * 100).toFixed(1) : 0
+      },
+      verification: {
+        pendingReviews,
+        verifiedReviews,
+        rejectedReviews,
+        flaggedReviews,
+        verifiedToday,
+        accuracyRate
+      },
+      ratingDistribution: ratingDistribution.map((rating: any) => ({
+        rating: rating.rating,
+        count: rating._count.rating
+      })),
+      popularCategories: popularCategoriesWithNames,
+      activeReviewers: activeReviewersWithNames,
+      exceptionalCategories: uniqueExceptionalCategories.map((review: any) => ({
+        category: review.exceptionalCategory,
+        subcategory: review.exceptionalSubCategory
+      })).filter((cat: any) => cat.category) // Remove nulls
+    };
+
+    res.status(200).json(stats);
+  } catch (error) {
+    console.error('Error fetching admin stats:', error);
+    next(error);
+  }
+};
+
+// Admin: Approve a review (set postState to VERIFIED)
+export const approveReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'VERIFIED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Verified ✅',
+          message: 'Your review has been verified and is now visible to all users',
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'VERIFIED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating verification notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review approved successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error approving review:', error);
+    return next(error);
+  }
+};
+
+// Admin: Reject a review (set postState to REJECTED)
+export const rejectReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'REJECTED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Rejected ❌',
+          message: `Your review has been rejected${adminNotes ? ': ' + adminNotes : ''}`,
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'REJECTED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating rejection notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review rejected successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error rejecting review:', error);
+    return next(error);
+  }
+};
+
+// Admin: Flag a review for manual review (set postState to FLAGGED)
+export const flagReviewForManualReview = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { adminId, adminNotes } = req.body;
+
+    if (!adminId) {
+      throw new ValidationError('Admin ID is required');
+    }
+
+    const review = await prisma.reviews.findUnique({
+      where: { id },
+      include: reviewInclude
+    });
+
+    if (!review) {
+      return res.status(404).json({ message: 'Review not found' });
+    }
+
+    const updatedReview = await prisma.reviews.update({
+      where: { id },
+      data: {
+        postState: 'FLAGGED',
+        reviewedBy: adminId,
+        reviewedAt: new Date(),
+        adminNotes: adminNotes || null
+      },
+      include: reviewInclude
+    });
+
+    // Create notification for the review author
+    try {
+      await prisma.notifications.create({
+        data: {
+          userId: review.userId,
+          type: 'REVIEW_STATUS',
+          title: 'Review Flagged 🚩',
+          message: `Your review has been flagged for manual review${adminNotes ? ': ' + adminNotes : ''}`,
+          data: {
+            reviewId: review.id,
+            reviewTitle: review.title || 'Your review',
+            status: 'FLAGGED',
+            adminNotes
+          },
+          relatedUserId: adminId,
+          isRead: false
+        }
+      });
+    } catch (notifError) {
+      console.error('Error creating flag notification:', notifError);
+    }
+
+    return res.status(200).json({
+      message: 'Review flagged for manual review successfully',
+      review: updatedReview
+    });
+  } catch (error) {
+    console.error('Error flagging review:', error);
+    return next(error);
+  }
+};
+
+// Get community stats for public display
+export const getCommunityStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // Get total reviews count (all reviews in database)
+    const totalReviews = await prisma.reviews.count();
+
+    // Get total unique users who have posted reviews (all time)
+    const activeUsers = await prisma.reviews.groupBy({
+      by: ['userId']
+    });
+
+    // Get verified reviews count
+    const verifiedReviews = await prisma.reviews.count({
+      where: {
+        postState: 'VERIFIED'
+      }
+    });
+
+    console.log('Community Stats:', {
+      totalReviews,
+      activeUsers: activeUsers.length,
+      verifiedReviews
+    });
+
+    return res.json({
+      totalReviews,
+      activeUsers: activeUsers.length,
+      verifiedReviews
+    });
+  } catch (error) {
+    console.error('Error getting community stats:', error);
+    return next(error);
+  }
+};

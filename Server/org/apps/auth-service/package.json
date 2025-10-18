@@ -1,0 +1,40 @@
+{
+  "name": "@org/auth-service",
+  "projectType": "application",
+  "sourceRoot": "apps/auth-service/src",
+  "targets": {
+    "serve": {
+      "executor": "@nx/node:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "auth-service:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "auth-service:build:development"
+        },
+        "production": {
+          "buildTarget": "auth-service:build:production"
+        }
+      }
+    },
+    "build": {
+      "executor": "@nx/node:build",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/auth-service",
+        "main": "apps/auth-service/src/main.ts",
+        "tsConfig": "apps/auth-service/tsconfig.app.json"
+      }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
+}
+

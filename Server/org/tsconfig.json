@@ -1,0 +1,43 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compileOnSave": false,
+  "files": [],
+  "references": [
+    {
+      "path": "./apps/auth-service-e2e"
+    },
+    {
+      "path": "./apps/auth-service"
+    },
+    {
+      "path": "./apps/api-gateway"
+    },
+    {
+      "path": "./apps/api-gateway-e2e"
+    },
+    {
+      "path": "./apps/review-service-e2e"
+    },
+    {
+      "path": "./apps/review-service"
+    },
+    {
+      "path": "./apps/domain-management-e2e"
+    },
+    {
+      "path": "./apps/domain-management"
+    },
+    {
+      "path": "./apps/user-profile-e2e"
+    },
+    {
+      "path": "./apps/user-profile"
+    },
+    {
+      "path": "./apps/user-interactions-e2e"
+    },
+    {
+      "path": "./apps/user-interactions"
+    }
+  ]
+}

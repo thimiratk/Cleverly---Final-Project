@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  # Nginx API Gateway
+  nginx-gateway:
+    image: nginx:alpine
+    container_name: cleverly-api-gateway
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - rule-fraud-service
+      - ml-fraud-service
+      - sentiment-service
+      - stance-detection-service
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+  # Rule-based Fraud Detection Service
+  rule-fraud-service:
+    build:
+      context: ../ruleBasedFD
+      dockerfile: Dockerfile
+    container_name: rule-fraud-service
+    ports:
+      - "8001:8001"
+    environment:
+      - PORT=8001
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+  # ML-based Fraud Detection Service
+  ml-fraud-service:
+    build:
+      context: ../mlBasedFD
+      dockerfile: Dockerfile
+    container_name: ml-fraud-service
+    ports:
+      - "8002:8002"
+    environment:
+      - PORT=8002
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+  # Sentiment Analysis Service
+  sentiment-service:
+    build:
+      context: ../Sentiment-Analysis-Service
+      dockerfile: Dockerfile
+    container_name: sentiment-service
+    ports:
+      - "8003:8003"
+    environment:
+      - PORT=8003
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+  # Stance Detection Service
+  stance-detection-service:
+    build:
+      context: ../stanceDetection
+      dockerfile: Dockerfile
+    container_name: stance-detection-service
+    ports:
+      - "8004:8004"
+    environment:
+      - PORT=8004
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - cleverly-network
+    restart: unless-stopped
+
+networks:
+  cleverly-network:
+    driver: bridge
